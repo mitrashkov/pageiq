@@ -1,7 +1,7 @@
 import secrets
 from typing import List, Optional, Union
 
-from pydantic import AnyHttpUrl, field_validator, ValidationInfo
+from pydantic import field_validator, ValidationInfo
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -17,12 +17,12 @@ class Settings(BaseSettings):
 
     # Server
     SERVER_NAME: str = "PageIQ"
-    SERVER_HOST: AnyHttpUrl = "https://pageiq.pompora.dev"
+    SERVER_HOST: str = "https://pageiq.pompora.dev"
     API_HOST: str = "0.0.0.0"
     API_PORT: int = 8000
 
     # CORS
-    BACKEND_CORS_ORIGINS: List[AnyHttpUrl] = [
+    BACKEND_CORS_ORIGINS: List[str] = [
         "https://pageiq.pompora.dev",
         "https://www.pageiq.com",
         "http://localhost:3000",  # React dev server
@@ -33,12 +33,12 @@ class Settings(BaseSettings):
     @classmethod
     def assemble_cors_origins(
         cls, v: Union[str, List[str]]
-    ) -> Union[List[str], str]:
-        if isinstance(v, str) and not v.startswith("["):
+    ) -> List[str]:
+        if isinstance(v, str):
             return [i.strip() for i in v.split(",")]
-        elif isinstance(v, (list, str)):
+        elif isinstance(v, list):
             return v
-        raise ValueError(v)
+        return v
 
     # Database
     # Default to SQLite for dev/test so the project runs without Postgres.

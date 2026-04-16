@@ -16,8 +16,16 @@ services:
       - key: API_HOST
         value: "0.0.0.0"
       - key: SERVER_HOST
-        value: https://pageiq.pompora.dev
+        value: "https://pageiq.pompora.dev"
       - key: BACKEND_CORS_ORIGINS
-        value: "https://pageiq.pompora.dev,https://www.pageiq.com"
+        value: "https://pageiq.pompora.dev,https://www.pageiq.com,http://localhost:3000,http://localhost:8080"
       - key: ENVIRONMENT
-        value: production
+        value: "production"
+      - key: SECRET_KEY
+        value: "change-me-in-production"
+      - key: ALGORITHM
+        value: "HS256"
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: "30"
+      - key: LOG_LEVEL
+        value: "info"
