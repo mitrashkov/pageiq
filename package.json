@@ -1,0 +1,25 @@
+{
+  "name": "pageiq-api",
+  "version": "1.0.0",
+  "description": "PageIQ - Website Intelligence API",
+  "main": "app/main.py",
+  "scripts": {
+    "start": "python -m uvicorn app.main:app --host 0.0.0.0 --port $PORT",
+    "dev": "python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload",
+    "test": "python -m pytest tests/ -v",
+    "test:cov": "python -m pytest tests/ --cov=app --cov-report=html"
+  },
+  "keywords": [
+    "api",
+    "website-analysis",
+    "web-intelligence",
+    "seo",
+    "analytics"
+  ],
+  "author": "PageIQ",
+  "license": "MIT",
+  "engines": {
+    "node": "18.x",
+    "python": "3.11.x"
+  }
+}

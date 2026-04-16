@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: pageiq-api
+    env: python
+    plan: starter
+    pythonVersion: 3.11
+    buildCommand: pip install --no-cache-dir -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: DEBUG
+        value: "false"
+      - key: DATABASE_URL
+        value: sqlite+pysqlite:///./pageiq.db
+      - key: REDIS_URL
+        value: redis://localhost:6379/0
+      - key: API_HOST
+        value: "0.0.0.0"
+      - key: SERVER_HOST
+        value: https://pageiq.pompora.dev
+      - key: BACKEND_CORS_ORIGINS
+        value: "https://pageiq.pompora.dev,https://www.pageiq.com"
+      - key: ENVIRONMENT
+        value: production
