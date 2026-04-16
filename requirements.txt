@@ -29,14 +29,5 @@ langdetect==1.0.9
 rake-nltk==1.0.6
 nltk==3.8.1
 locust==2.15.1
-opentelemetry-distro==0.45b0
-opentelemetry-instrumentation==0.45b0
-opentelemetry-instrumentation-fastapi==0.45b0
-opentelemetry-instrumentation-sqlalchemy==0.45b0
-opentelemetry-instrumentation-redis==0.45b0
-opentelemetry-instrumentation-httpx==0.45b0
-opentelemetry-exporter-jaeger==1.21.0
-opentelemetry-exporter-otlp-proto-grpc==1.21.0
-sentry-sdk[fastapi]==1.38.0
 py-spy==0.3.14
 memory-profiler==0.61.0
