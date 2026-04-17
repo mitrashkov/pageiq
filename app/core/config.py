@@ -102,12 +102,8 @@ class Settings(BaseSettings):
     # Logging
     LOG_LEVEL: str = "INFO"
 
-    # Trusted hosts
-    ALLOWED_HOSTS: List[str] = [
-        "pageiq.pompora.dev",
-        "localhost",
-        "127.0.0.1",
-    ]
+    # Trusted hosts - Allow all hosts since Cloudflare handles security
+    ALLOWED_HOSTS: List[str] = ["*"]
 
     model_config = SettingsConfigDict(
         env_file=".env",
