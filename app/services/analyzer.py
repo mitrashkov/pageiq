@@ -36,33 +36,56 @@ async def analyze_url(
     html_content: Optional[str] = None
     headers: Dict[str, str] = {}
     browser_metadata: Dict[str, Any] = {}
+    diagnostics = {
+        "fetch_method": None,
+        "http_error": None,
+        "browser_error": None,
+        "fallback_to_browser": False,
+        "final_status": None,
+    }
 
     if use_browser:
+        diagnostics["fetch_method"] = "browser"
         async with browser_service as browser:
             html_content, error, browser_metadata = await browser.fetch_page(
                 url,
                 wait_for_network_idle=bool(options.get("wait_for_network_idle", True)),
             )
             if error:
+                diagnostics["browser_error"] = error
+                diagnostics["final_status"] = "browser_failed"
                 raise RuntimeError(error)
             headers = browser_metadata.get("headers", {}) if isinstance(browser_metadata, dict) else {}
+            diagnostics["final_status"] = "browser_success"
     else:
+        diagnostics["fetch_method"] = "http"
         html_content, error, headers = html_fetcher.fetch_html(url)
         if error:
-            # Fallback to browser if basic fetch fails
+            diagnostics["http_error"] = error
+            diagnostics["fallback_to_browser"] = True
             if not playwright_available():
+                diagnostics["final_status"] = "http_failed_no_browser"
                 raise RuntimeError(error)
             async with browser_service as browser:
                 html_content, error, browser_metadata = await browser.fetch_page(url)
                 if error:
+                    diagnostics["browser_error"] = error
+                    diagnostics["final_status"] = "browser_failed"
                     raise RuntimeError(error)
                 headers = browser_metadata.get("headers", {}) if isinstance(browser_metadata, dict) else {}
+                diagnostics["final_status"] = "browser_success"
+        else:
+            diagnostics["final_status"] = "http_success"
+
 
     if not html_content:
+        diagnostics["final_status"] = "no_content"
         raise RuntimeError("Unable to fetch webpage content")
+
 
     soup = html_fetcher.parse_html(html_content)
     if not soup:
+        diagnostics["final_status"] = "parse_failed"
         raise RuntimeError("Unable to parse HTML content")
     if not isinstance(soup, BeautifulSoup):
         soup = BeautifulSoup(html_content, "html.parser")
@@ -105,6 +128,7 @@ async def analyze_url(
             if filename:
                 screenshot_url = screenshot_service.save_screenshot(screenshot_data, str(filename))
 
+
     data = {
         "url": url,
         "title": title,
@@ -126,6 +150,7 @@ async def analyze_url(
         "ai_summary": ai_summary,
         "timestamp": int(time.time() * 1000),
         "processing_time_ms": processing_time_ms,
+        "diagnostics": diagnostics,
     }
 
     industry = guess_industry(

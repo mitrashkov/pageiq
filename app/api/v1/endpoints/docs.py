@@ -565,29 +565,32 @@ TEST_PAGE_HTML = """
             }
         }
         
+
         function displayResults(response, data, body, elapsed) {
             const resultsContent = document.getElementById('results-content');
             const placeholder = document.getElementById('results-placeholder');
-            
             placeholder.classList.remove('active');
             resultsContent.classList.add('active');
-            
             const statusClass = response.ok ? 'success' : 'error';
-            
+            let diagnosticsHtml = '';
+            if (data && data.diagnostics) {
+                diagnosticsHtml = `<div class="diagnostics-box"><h4>Diagnostics</h4><div class="code-box">${escapeHtml(JSON.stringify(data.diagnostics, null, 2))}</div></div>`;
+            } else if (data && data.data && data.data.diagnostics) {
+                diagnosticsHtml = `<div class="diagnostics-box"><h4>Diagnostics</h4><div class="code-box">${escapeHtml(JSON.stringify(data.data.diagnostics, null, 2))}</div></div>`;
+            }
             resultsContent.innerHTML = `
                 <div class="status-badge status-${statusClass}">
                     Status: ${response.status} ${response.statusText} • Response time: ${elapsed.toFixed(0)}ms
                 </div>
-                
                 <div class="request-display">
                     <h4 style="margin-bottom: 10px;">Request</h4>
                     <div class="code-box">${escapeHtml(JSON.stringify({ method: currentEndpoint.method, path: currentEndpoint.path, body }, null, 2))}</div>
                 </div>
-                
                 <div class="response-display ${statusClass === 'error' ? 'error' : ''}">
                     <h4 style="margin-bottom: 10px;">Response</h4>
                     <div class="code-box">${escapeHtml(JSON.stringify(data, null, 2))}</div>
                 </div>
+                ${diagnosticsHtml}
             `;
         }
         
@@ -654,10 +657,139 @@ TEST_PAGE_HTML = """
 </html>
 """
 
+
+# --- /docs: Serve real documentation (placeholder for now) ---
+DOCS_PAGE_HTML = """
+<!DOCTYPE html>
+<html lang=\"en\">
+<head>
+    <meta charset=\"UTF-8\">
+    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">
+    <title>PageIQ API Documentation</title>
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f8f9fa; color: #222; margin: 0; }
+        .container { max-width: 900px; margin: 40px auto; background: #fff; border-radius: 10px; box-shadow: 0 2px 16px rgba(0,0,0,0.07); padding: 40px; }
+        h1 { color: #667eea; }
+        h2 { color: #333; margin-top: 2em; }
+        code, pre { background: #f4f4f4; border-radius: 4px; padding: 2px 6px; font-size: 15px; }
+        .endpoint { margin-bottom: 2em; }
+        .endpoint-method { font-weight: bold; color: #fff; background: #667eea; border-radius: 4px; padding: 2px 10px; margin-right: 8px; }
+        .endpoint-path { font-family: 'Courier New', monospace; color: #222; }
+        .param-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        .param-table th, .param-table td { border: 1px solid #eee; padding: 8px; text-align: left; }
+        .param-table th { background: #f8f8f8; }
+        .example-box { background: #f4f4f4; border-radius: 4px; padding: 12px; margin-top: 10px; font-family: 'Courier New', monospace; font-size: 14px; }
+        .section { margin-bottom: 2.5em; }
+    </style>
+</head>
+<body>
+    <div class=\"container\">
+        <h1>PageIQ API Documentation</h1>
+        <p>Welcome to the official documentation for the PageIQ API. Here you'll find details on all endpoints, parameters, example requests and responses, and technical/product overview. For interactive testing, visit <a href=\"/tests\">/tests</a>.</p>
+        <div class=\"section\">
+            <h2>Overview</h2>
+            <p>PageIQ is a robust, production-grade API for website analysis, extraction, and intelligence. It supports advanced crawling, batch processing, anti-bot, and more. See the <b>plan/README.md</b> for the full product and technical vision.</p>
+        </div>
+        <div class=\"section\">
+            <h2>Endpoints</h2>
+            <div class=\"endpoint\">
+                <span class=\"endpoint-method\">GET</span>
+                <span class=\"endpoint-path\">/api/v1/ping</span>
+                <div>Health check endpoint.</div>
+            </div>
+            <div class=\"endpoint\">
+                <span class=\"endpoint-method\">GET</span>
+                <span class=\"endpoint-path\">/api/v1/</span>
+                <div>API status information.</div>
+            </div>
+            <div class=\"endpoint\">
+                <span class=\"endpoint-method\">POST</span>
+                <span class=\"endpoint-path\">/api/v1/analyze</span>
+                <div>Analyze a website and extract comprehensive data.</div>
+                <table class=\"param-table\">
+                    <tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr>
+                    <tr><td>url</td><td>string</td><td>Yes</td><td>Website URL to analyze</td></tr>
+                    <tr><td>wait_for_js</td><td>boolean</td><td>No</td><td>Wait for JS rendering</td></tr>
+                </table>
+                <div class=\"example-box\"><b>Example Request:</b><br>POST /api/v1/analyze<br>{"url": "https://example.com", "wait_for_js": false}</div>
+            </div>
+            <!-- More endpoints to be added dynamically from plan/README.md and codebase -->
+        </div>
+        <div class=\"section\">
+            <h2>Batch, Extraction, SEO, and More</h2>
+            <p>See the full list of endpoints and features in the technical plan. This documentation will be expanded to cover all endpoints, parameters, and advanced features.</p>
+        </div>
+        <div class=\"section\">
+            <h2>Product & Technical Vision</h2>
+            <p>PageIQ is built for reliability, scalability, and intelligence. It leverages Playwright, BeautifulSoup, Wappalyzer, Redis, PostgreSQL, Celery, Docker, and more. For details, see <b>plan/README.md</b>.</p>
+        </div>
+    </div>
+</body>
+</html>
+"""
+
+
+import inspect
+import importlib
+from fastapi.routing import APIRoute
+from fastapi.encoders import jsonable_encoder
+from fastapi.openapi.utils import get_openapi
+from app.api.v1.endpoints import analyze, batch, extract, seo, billing, health, analytics
+
+def generate_endpoint_docs():
+    # Collect all routers
+    routers = [analyze.router, batch.router, extract.router, seo.router, billing.router, health.router, analytics.router]
+    endpoint_docs = []
+    for router in routers:
+        for route in router.routes:
+            if not isinstance(route, APIRoute):
+                continue
+            doc = {
+                "path": route.path,
+                "methods": list(route.methods),
+                "name": route.name,
+                "summary": route.summary or route.endpoint.__doc__ or "",
+                "response_model": getattr(route, "response_model", None),
+                "endpoint": route.endpoint,
+                "parameters": [],
+            }
+            # Get parameter info
+            sig = inspect.signature(route.endpoint)
+            for name, param in sig.parameters.items():
+                if name in ("user", "db", "background_tasks"):  # skip injected deps
+                    continue
+                param_info = {
+                    "name": name,
+                    "annotation": str(param.annotation),
+                    "default": param.default if param.default != inspect.Parameter.empty else None,
+                }
+                doc["parameters"].append(param_info)
+            endpoint_docs.append(doc)
+    return endpoint_docs
+
+def render_docs_html():
+    endpoint_docs = generate_endpoint_docs()
+    html = ["<html><head><title>PageIQ API Documentation</title><style>body{font-family:sans-serif;background:#f8f9fa;color:#222;margin:0;} .container{max-width:900px;margin:40px auto;background:#fff;border-radius:10px;box-shadow:0 2px 16px rgba(0,0,0,0.07);padding:40px;} h1{color:#667eea;} h2{color:#333;margin-top:2em;} code,pre{background:#f4f4f4;border-radius:4px;padding:2px 6px;font-size:15px;} .endpoint{margin-bottom:2em;} .endpoint-method{font-weight:bold;color:#fff;background:#667eea;border-radius:4px;padding:2px 10px;margin-right:8px;} .endpoint-path{font-family:'Courier New',monospace;color:#222;} .param-table{width:100%;border-collapse:collapse;margin-top:10px;} .param-table th,.param-table td{border:1px solid #eee;padding:8px;text-align:left;} .param-table th{background:#f8f8f8;} .example-box{background:#f4f4f4;border-radius:4px;padding:12px;margin-top:10px;font-family:'Courier New',monospace;font-size:14px;} .section{margin-bottom:2.5em;}</style></head><body><div class='container'>"]
+    html.append("<h1>PageIQ API Documentation</h1>")
+    html.append("<p>Auto-generated documentation for all endpoints. For interactive testing, visit <a href='/tests'>/tests</a>.</p>")
+    html.append("<div class='section'><h2>Endpoints</h2>")
+    for doc in endpoint_docs:
+        html.append(f"<div class='endpoint'><span class='endpoint-method'>{','.join(doc['methods'])}</span> <span class='endpoint-path'>{doc['path']}</span><div>{doc['summary'] or ''}</div>")
+        if doc['parameters']:
+            html.append("<table class='param-table'><tr><th>Name</th><th>Type</th><th>Default</th></tr>")
+            for p in doc['parameters']:
+                html.append(f"<tr><td>{p['name']}</td><td>{p['annotation']}</td><td>{p['default']}</td></tr>")
+            html.append("</table>")
+        html.append("</div>")
+    html.append("</div>")
+    html.append("<div class='section'><h2>Product & Technical Vision</h2><p>PageIQ is built for reliability, scalability, and intelligence. It leverages Playwright, BeautifulSoup, Wappalyzer, Redis, PostgreSQL, Celery, Docker, and more. For details, see <b>plan/README.md</b>.</p></div>")
+    html.append("</div></body></html>")
+    return "".join(html)
+
 @router.get("/docs", response_class=HTMLResponse)
 async def get_docs():
-    """Serve the documentation page"""
-    return TEST_PAGE_HTML
+    """Serve the auto-generated documentation page"""
+    return HTMLResponse(content=render_docs_html())
 
 @router.get("/tests", response_class=HTMLResponse)
 async def get_tests():
