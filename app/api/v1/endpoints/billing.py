@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from app.core.auth import get_user
+from app.core.auth import get_current_user
 from app.core.database import get_db
 from app.core.responses import APIResponse
 from app.models import User
@@ -46,7 +46,7 @@ class InvoiceResponse(BaseModel):
 
 @router.get("/subscription")
 async def get_subscription(
-    user: User = Depends(get_user),
+    user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """
@@ -88,7 +88,7 @@ async def get_subscription(
 @router.post("/subscription/upgrade")
 async def upgrade_subscription(
     request: SubscriptionPlan,
-    user: User = Depends(get_user),
+    user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """
@@ -120,7 +120,7 @@ async def upgrade_subscription(
 
 @router.post("/subscription/cancel")
 async def cancel_subscription(
-    user: User = Depends(get_user),
+    user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """
@@ -154,7 +154,7 @@ async def cancel_subscription(
 
 @router.get("/billing/invoices")
 async def get_invoices(
-    user: User = Depends(get_user),
+    user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """
@@ -182,7 +182,7 @@ async def get_invoices(
 
 @router.get("/billing/payment-methods")
 async def get_payment_methods(
-    user: User = Depends(get_user),
+    user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """
@@ -216,7 +216,7 @@ class PaymentMethodRequest(BaseModel):
 @router.post("/billing/payment-methods")
 async def add_payment_method(
     request: PaymentMethodRequest,
-    user: User = Depends(get_user),
+    user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """
@@ -298,7 +298,7 @@ async def handle_stripe_webhook(
 
 @router.get("/account/billing-summary")
 async def get_billing_summary(
-    user: User = Depends(get_user),
+    user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """
