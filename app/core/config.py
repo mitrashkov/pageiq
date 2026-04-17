@@ -22,10 +22,7 @@ class Settings(BaseSettings):
     API_PORT: int = 8000
 
     # CORS
-    BACKEND_CORS_ORIGINS: List[str] = [
-        "http://localhost:3000",
-        "http://localhost:8080",
-    ]
+    BACKEND_CORS_ORIGINS: List[str] = ["*"]
 
     @field_validator("BACKEND_CORS_ORIGINS", mode="before")
     @classmethod
