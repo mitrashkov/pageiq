@@ -32,8 +32,8 @@ app = FastAPI(
     description="Website Intelligence API that turns any URL into structured business data",
     version="1.0.0",
     openapi_url=f"{settings.API_V1_STR}/openapi.json",
-    docs_url="/docs",
-    redoc_url="/redoc",
+    docs_url=None,  # Disable automatic docs (we provide custom at /docs)
+    redoc_url=None,  # Disable automatic redoc
 )
 
 # Add exception handlers (requires app instance)
@@ -89,6 +89,10 @@ app.add_middleware(MetricsMiddleware)
 
 # Include API router with versioning
 app.include_router(api_router, prefix=settings.API_V1_STR)
+
+# Include docs and tests endpoints at root level
+from app.api.v1.endpoints import docs
+app.include_router(docs.router)
 
 # Serve saved screenshots (local dev / default storage)
 Path(settings.SCREENSHOTS_DIR).mkdir(parents=True, exist_ok=True)

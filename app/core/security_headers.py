@@ -51,30 +51,19 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
     def _get_content_security_policy(self) -> Optional[str]:
         """Generate Content Security Policy header"""
-        if settings.DEBUG:
-            # More permissive CSP for development
-            return (
-                "default-src 'self'; "
-                "script-src 'self' 'unsafe-inline' 'unsafe-eval'; "
-                "style-src 'self' 'unsafe-inline'; "
-                "img-src 'self' data: https:; "
-                "font-src 'self' data:; "
-                "connect-src 'self' https://api.github.com https://httpbin.org; "
-                "frame-ancestors 'none';"
-            )
-        else:
-            # Strict CSP for production
-            return (
-                "default-src 'self'; "
-                "script-src 'self'; "
-                "style-src 'self'; "
-                "img-src 'self' data: https://screenshots.pageiq.io; "
-                "font-src 'self'; "
-                "connect-src 'self'; "
-                "frame-ancestors 'none'; "
-                "base-uri 'self'; "
-                "form-action 'self';"
-            )
+        # Allow docs/tests pages to use inline styles and scripts
+        # Production: Use external CSS/JS files
+        return (
+            "default-src 'self'; "
+            "script-src 'self' 'unsafe-inline'; "
+            "style-src 'self' 'unsafe-inline'; "
+            "img-src 'self' data: https:; "
+            "font-src 'self' data:; "
+            "connect-src 'self' https:; "
+            "frame-ancestors 'none'; "
+            "base-uri 'self'; "
+            "form-action 'self';"
+        )
 
 
 class RequestValidationMiddleware(BaseHTTPMiddleware):
