@@ -1,377 +1,151 @@
-# RapidAPI Integration Guide
+# RapidAPI Integration & Configuration Guide for PageIQ
 
-PageIQ is ready for RapidAPI Marketplace! Here's how to list and configure it.
+This guide provides a comprehensive walkthrough for integrating the PageIQ API with RapidAPI. It includes every detail needed to set up endpoints, configure the proxy, and provide a world-class developer experience.
 
----
+## 1. RapidAPI Configuration
 
-## What is RapidAPI?
+### Proxy Authentication
+PageIQ uses a **Proxy Secret** to verify that requests are genuinely coming from RapidAPI.
 
-RapidAPI is a marketplace where developers discover and use APIs. It handles billing, authentication, and provides SDKs for multiple languages.
+1. In your RapidAPI Provider Dashboard, go to **Definition** -> **Security**.
+2. Find the **Proxy Secret** section.
+3. Copy the secret and add it to your Render environment variables as:
+   `RAPIDAPI_PROXY_SECRET=your_rapidapi_proxy_secret`
 
-**Key Benefits:**
-- ✅ Automatic billing through RapidAPI (no Stripe needed)
-- ✅ Massive developer audience
-- ✅ Built-in SDK generation
-- ✅ Usage analytics and monetization
-
----
-
-## Step 1: Sign Up / Login to RapidAPI
-
-1. Go to: https://rapidapi.com
-2. Click **"Sign Up"** (or login if you have an account)
-3. Complete profile setup
+### API Host
+Your API is hosted at: `https://pageiq.pompora.dev/api/v1`
 
 ---
 
-## Step 2: Create Your API on RapidAPI
+## 2. API Endpoints Reference
 
-1. Go to Dashboard: https://rapidapi.com/developer/dashboard
-2. Click **"Add New"** → **"API"**
-3. Fill in the form:
+### **Endpoint 1: Analyze Website (POST)**
+*The core engine that turns any URL into structured business intelligence.*
 
-| Field | Value |
-|-------|-------|
-| **API Name** | `PageIQ` |
-| **Description** | Website Intelligence API - turn any URL into structured business data |
-| **Category** | Web Tools / API Tools |
-| **API Gateway** | REST |
-| **Requires Authentication** | Yes |
-| **Base URL** | `https://pageiq.pompora.dev/api/v1` |
-
-4. Click **"Create API"**
-
----
-
-## Step 3: Add API Endpoints
-
-For each endpoint, you'll add details. Start with the main ones:
-
-### Endpoint 1: Analyze Website
-
-- **Method:** POST
 - **Path:** `/analyze`
-- **Name:** Analyze Website
-- **Description:** Analyze a website and return structured business data
-
-**Request Parameters:**
-```json
-{
-  "url": "string (required)",
-  "options": {
-    "screenshot": "boolean",
-    "extract_emails": "boolean",
-    "detect_technology": "boolean",
-    "detect_industry": "boolean",
-    "analyze_seo": "boolean"
-  }
-}
-```
-
-**Response Example:**
-```json
-{
-  "success": true,
-  "data": {
+- **Description:** Performs a deep analysis of a website, including metadata, tech stack, social links, contact info, and business category.
+- **Request Body (JSON):**
+  ```json
+  {
     "url": "https://example.com",
-    "title": "Example",
-    "description": "Example Domain",
-    "technologies": [],
-    "industry": "Technology",
-    "emails": [],
-    "seo": {}
-  },
-  "request_id": "req_abc123",
-  "processing_time_ms": 2450,
-  "quota_remaining": 999
-}
-```
+    "options": {
+      "screenshot": true,
+      "use_browser": true
+    }
+  }
+  ```
+- **Response Example:**
+  ```json
+  {
+    "success": true,
+    "data": {
+      "title": "Example Domain",
+      "description": "This domain is for use in illustrative examples...",
+      "tech_stack": ["Nginx", "OpenSSL"],
+      "social_links": ["https://twitter.com/example"],
+      "emails": ["info@example.com"],
+      "industry": "Technology",
+      "screenshot_url": "https://pageiq.pompora.dev/screenshots/..."
+    }
+  }
+  ```
 
-### Endpoint 2: Extract Emails
+### **Endpoint 2: Extract Emails (POST)**
+*Extract and validate all professional email addresses found on a page.*
 
-- **Method:** POST
 - **Path:** `/extract/emails`
-- **Name:** Extract Email Addresses
-- **Description:** Extract email addresses from a webpage
+- **Description:** Scans the webpage for email patterns in text, footers, and contact forms. Returns unique, validated emails.
+- **Request Body (JSON):**
+  ```json
+  {
+    "url": "https://example.com/contact"
+  }
+  ```
 
-### Endpoint 3: Get Quota
+### **Endpoint 3: SEO Audit (POST)**
+*Perform a comprehensive technical SEO audit of any webpage.*
 
-- **Method:** GET
-- **Path:** `/account/quota`
-- **Name:** Get API Quota
-- **Description:** Check your current API quota and usage
+- **Path:** `/seo/seo-audit`
+- **Description:** Checks titles, meta descriptions, headings (H1-H6), image alt tags, and mobile-friendliness.
+- **Request Body (JSON):**
+  ```json
+  {
+    "url": "https://example.com"
+  }
+  ```
 
-### Endpoint 4: Health Check
+### **Endpoint 4: Batch Analyze (POST)**
+*Process multiple websites in a single asynchronous request.*
 
-- **Method:** GET
-- **Path:** `/ping`
-- **Name:** Health Check
-- **Description:** Simple endpoint to verify API is running
+- **Path:** `/batch-analyze`
+- **Description:** Submit a list of URLs for analysis. Returns a `batch_id` to track progress.
+- **Request Body (JSON):**
+  ```json
+  {
+    "urls": ["https://site1.com", "https://site2.com"]
+  }
+  ```
 
----
+### **Endpoint 5: Health Check (GET)**
+*Monitor the status of the API and its dependencies.*
 
-## Step 4: Configure Authentication
-
-### Method: API Key
-
-1. In RapidAPI dashboard, go to **"Authentication"**
-2. Select **"API Key"** type
-3. Configure:
-   - **Location:** Header
-   - **Header Name:** `Authorization`
-   - **Format:** `Bearer YOUR_API_KEY`
-   - **Name to display in docs:** "API Key"
-
-4. Provide sample:
-   ```
-   Bearer sk_live_abc123xyz789
-   ```
-
----
-
-## Step 5: Set Up Pricing & Plans
-
-### Free Plan (Freemium)
-- **Requests/Month:** 1,000
-- **Price:** Free
-- **Features:** Basic analysis, no screenshots
-
-### Pro Plan
-- **Requests/Month:** 100,000
-- **Price:** $29/month or $49/month (your choice)
-- **Features:** Full analysis, screenshots, batch requests
-
-### Enterprise Plan
-- **Requests/Month:** Unlimited
-- **Price:** Custom (contact sales)
-
-**To Configure:**
-
-1. Go to **"Pricing"** section
-2. Click **"Add Plan"**
-3. Set tier name, request limit, price
-4. Click **"Save"**
+- **Path:** `/health`
+- **Description:** Returns the current health of the API, database, and Redis.
+- **Response:**
+  ```json
+  {
+    "status": "healthy",
+    "service": "PageIQ API",
+    "dependencies": {
+      "database": "healthy",
+      "redis": "healthy"
+    }
+  }
+  ```
 
 ---
 
-## Step 6: Test Integration
+## 3. RapidAPI Dashboard Setup
 
-### Using RapidAPI Testing Console
+### Endpoints Tab
+For every endpoint listed above, add them to the **Endpoints** tab in RapidAPI:
 
-1. In your API dashboard, go to **"Testing"** section
-2. Select an endpoint (e.g., `/ping`)
-3. Click **"Test"**
-4. RapidAPI will make a request to your API
-5. You should see response in console
+1. **Name:** Give it a clear name (e.g., "Analyze Website").
+2. **Method:** Set to `POST`.
+3. **URL:** Use the relative path (e.g., `/analyze`).
+4. **Description:** Use the descriptions provided above.
+5. **Payload:** Provide the example JSON from above in the **Request Body** section.
 
-**Expected Response:**
-```json
-{
-  "status": "ok",
-  "message": "pong"
-}
-```
-
-### Test with cURL
-
-RapidAPI provides cURL examples. Example:
-
-```bash
-curl --get --include 'https://pageiq.p.rapidapi.com/api/v1/ping' \
-  -H 'x-rapidapi-key: YOUR_RAPIDAPI_KEY' \
-  -H 'x-rapidapi-host: pageiq.p.rapidapi.com'
-```
+### Pricing Plans
+RapidAPI handles the billing. You should align your RapidAPI plans with the `plan` header we handle:
+- **Free:** 100 requests/month
+- **Basic:** 1,000 requests/month
+- **Pro:** 10,000 requests/month
+- **Business:** 50,000 requests/month
 
 ---
 
-## Step 7: Upload Documentation
+## 4. Enabling Interactive Tests & Client-Side Access
 
-1. Go to **"Documentation"** section
-2. Add markdown-formatted documentation
-3. Include:
-   - Overview of what your API does
-   - Getting started guide
-   - Endpoint reference
-   - Code examples (JavaScript, Python, etc.)
+To ensure developers can test the API directly from the RapidAPI UI without CORS issues:
 
-**Sample Documentation Template:**
-
-```markdown
-# PageIQ API
-
-Website Intelligence API that turns any URL into structured business data.
-
-## Getting Started
-
-1. Get an API key
-2. Make a POST request to `/analyze` with a URL
-3. Receive structured website data
-
-## Endpoints
-
-### POST /analyze
-
-Analyze any website.
-
-**Request:**
-```json
-{
-  "url": "https://example.com"
-}
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "data": { /* ... */ }
-}
-```
-
-### GET /account/quota
-
-Check your quota.
-
-**Response:**
-```json
-{
-  "plan": "pro",
-  "quota_remaining": 9975
-}
-```
-```
+1. **Base URL:** Ensure your Base URL in RapidAPI is set to `https://pageiq.pompora.dev/api/v1`.
+2. **CORS:** We have already optimized the server to allow all origins (`*`) and all common RapidAPI headers.
+3. **Response Headers:** The API is configured to expose all headers to the client, ensuring RapidAPI's testing tab can display full request/response info.
 
 ---
 
-## Step 8: Publish Your API
+## 5. Troubleshooting Render (CORS & 502)
 
-1. Go to **"Settings"** → **"Publish"**
-2. Select visibility:
-   - **Private:** Only you can see
-   - **Public:** Everyone can see and subscribe
-3. Click **"Publish"**
+If you see a **502 CORS Error** or **Failed to fetch** on Render:
 
----
+1. **Check ALLOWED_HOSTS:** Ensure `ALLOWED_HOSTS=["*"]` is set (we already enabled this).
+2. **Proxy Headers:** We've enabled `--proxy-headers` in `start.sh` so Render/Cloudflare/RapidAPI can pass the correct IP and Protocol.
+3. **CORS Headers:** We've relaxed the `Cross-Origin-Resource-Policy` to `cross-origin` in `app/core/security_headers.py`.
+4. **Environment Variables:** Make sure you've added `RAPIDAPI_PROXY_SECRET` to Render dashboard.
 
-## Step 9: Monitor & Manage
-
-### Dashboard Features
-
-After publishing, you can:
-
-- **View Usage:** See analytics, requests, errors
-- **Manage Subscribers:** See who's using your API
-- **View Revenue:** How much you're earning
-- **Support Tickets:** Customer inquiries
-- **API Logs:** All requests to your API
-
-### Monitoring URL
-
-Go to: https://rapidapi.com/developer/dashboard
-
----
-
-## RapidAPI SDK Generation
-
-RapidAPI automatically generates SDKs for:
-
-- ✅ JavaScript/Node.js
-- ✅ Python
-- ✅ Java
-- ✅ Go
-- ✅ PHP
-- ✅ Swift
-- ✅ Ruby
-
-Example (Generated JavaScript):
-
-```javascript
-const rapidapi = require('rapidapi-connect');
-
-const api = new rapidapi.Client();
-api.authenticate('YOUR_RAPIDAPI_KEY');
-
-api.callAsync('https://pageiq.p.rapidapi.com/api/v1/analyze', 'POST', {
-  url: 'https://example.com'
-})
-.then(output => console.log(output))
-.catch(error => console.log(error));
-```
-
----
-
-## API Host on RapidAPI
-
-Once published, your API will be available at:
-
-```
-https://pageiq.p.rapidapi.com/api/v1
-```
-
-**Note:** `p.rapidapi.com` is RapidAPI's proxy. Your actual API at `pageiq.pompora.dev` remains unchanged.
-
----
-
-## Billing & Revenue Share
-
-- **RapidAPI Rate:** 30% RapidAPI + 70% to you
-- **Payouts:** Monthly via PayPal/Stripe
-- **Minimum:** $1 to payout
-- **Frequency:** Monthly on the 20th
-
----
-
-## Troubleshooting
-
-### "API is not responding"
-
-Check:
-1. Is your API running? Test at `https://pageiq.pompora.dev/api/v1/ping`
-2. Is the base URL correct in RapidAPI settings?
-3. Are your endpoints accessible?
-
-### "Authentication failing"
-
-Check:
-1. Is the Authorization header format correct? (`Bearer YOUR_KEY`)
-2. Are you passing the actual API key (not placeholder)?
-
-### "Subscribers can't access my API"
-
-Check:
-1. Is the API "Published" (not in draft)?
-2. Did you set a pricing tier?
-3. Are they on a valid plan?
-
----
-
-## What Happens When Someone Uses Your API?
-
-1. Developer subscribes to a plan on RapidAPI
-2. RapidAPI gives them a special API key
-3. They call your API through RapidAPI's proxy
-4. RapidAPI forwards request to your actual API
-5. Your API responds normally
-6. RapidAPI tracks usage and billing
-7. You get paid monthly for requests used
-
----
-
-## Next Steps
-
-1. ✅ Create API on RapidAPI
-2. ✅ Add endpoints
-3. ✅ Configure pricing
-4. ✅ Test with RapidAPI console
-5. ✅ Publish to marketplace
-6. ✅ Monitor analytics
-
----
-
-## Support
-
-- **RapidAPI Help:** https://rapidapi.com/help
-- **PageIQ Support:** support@pompora.dev
-- **GitHub Issues:** https://github.com/mitrashkov/pageiq/issues
-
----
+## 5. Deployment Checklist
+1. [ ] Push this code to GitHub.
+2. [ ] Render will auto-deploy.
+3. [ ] Verify health at `https://pageiq.pompora.dev/api/v1/health`.
+4. [ ] Test the `/analyze` endpoint from the RapidAPI "Test Endpoint" button.

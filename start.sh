@@ -23,4 +23,4 @@ python -m alembic upgrade head 2>/dev/null || echo "Database already up to date"
 
 # Start the API server
 echo "Starting PageIQ API on port $PORT..."
-exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}
+exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --proxy-headers --forwarded-allow-ips='*'

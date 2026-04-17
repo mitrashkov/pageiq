@@ -62,6 +62,17 @@ class RateLimitExceededException(PageIQException):
         self.retry_after = retry_after
 
 
+class ServiceUnavailableException(PageIQException):
+    """Exception for service unavailable errors (e.g., Redis down, AI service down)"""
+
+    def __init__(self, detail: str = "Service temporarily unavailable"):
+        super().__init__(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=detail,
+            error_code="SERVICE_UNAVAILABLE"
+        )
+
+
 def create_error_response(
     status_code: int,
     message: str,

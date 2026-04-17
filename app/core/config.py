@@ -96,6 +96,20 @@ class Settings(BaseSettings):
     # Project
     PROJECT_NAME: str = "PageIQ"
 
+    # RapidAPI
+    RAPIDAPI_PROXY_SECRET: Optional[str] = None
+
+    # Environment
+    ENVIRONMENT: str = "production"  # development, staging, production
+
+    @property
+    def is_production(self) -> bool:
+        return self.ENVIRONMENT == "production"
+
+    @property
+    def is_development(self) -> bool:
+        return self.ENVIRONMENT == "development"
+
     # Logging
     LOG_LEVEL: str = "INFO"
 

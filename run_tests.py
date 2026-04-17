@@ -68,10 +68,10 @@ class TestRunner:
                 output = result.stdout + result.stderr
                 
                 if result.returncode == 0:
-                    status = "✓ PASSED"
+                    status = "[PASSED]"
                     self.results["passed"] += 1
                 else:
-                    status = "✗ FAILED"
+                    status = "[FAILED]"
                     self.results["failed"] += 1
                 
                 print(status)
@@ -85,12 +85,12 @@ class TestRunner:
                 })
                 
             except Exception as e:
-                print(f"✗ ERROR: {str(e)}")
+                print(f"[ERROR]: {str(e)}")
                 self.results["failed"] += 1
                 self.results["test_suites"].append({
                     "name": suite_name,
                     "path": suite_path,
-                    "status": "✗ ERROR",
+                    "status": "[ERROR]",
                     "error": str(e)
                 })
         
@@ -141,65 +141,66 @@ def print_production_checklist():
     print("=" * 80)
     
     checklist = {
-        "✓ Core Implementation": [
-            "✓ /analyze endpoint (comprehensive analysis)",
-            "✓ /batch-analyze endpoint (bulk processing)",
-            "✓ /extract/emails endpoint",
-            "✓ /extract/schema endpoint",
-            "✓ /extract/metadata endpoint",
-            "✓ /seo/seo-audit endpoint",
-            "✓ /seo/broken-links endpoint",
-            "✓ /analytics endpoint",
-            "✓ /health endpoint",
+        "[DONE] Core Implementation": [
+            "[DONE] /analyze endpoint (comprehensive analysis)",
+            "[DONE] /batch-analyze endpoint (bulk processing)",
+            "[DONE] /extract/emails endpoint",
+            "[DONE] /extract/schema endpoint",
+            "[DONE] /extract/metadata endpoint",
+            "[DONE] /seo/seo-audit endpoint",
+            "[DONE] /seo/broken-links endpoint",
+            "[DONE] /analytics endpoint",
+            "[DONE] /health endpoint",
         ],
-        "✓ Services": [
-            "✓ Advanced HTML fetcher with retry logic",
-            "✓ Browser automation with anti-detection",
-            "✓ Comprehensive extractors (title, description, emails, etc.)",
-            "✓ Advanced tech stack detection",
-            "✓ Enhanced speed scoring (Web Vitals aligned)",
-            "✓ AI summarization with RAKE algorithm",
-            "✓ Industry detection",
-            "✓ Robots.txt compliance checking",
+        "[DONE] Services": [
+            "[DONE] Advanced HTML fetcher with retry logic",
+            "[DONE] Browser automation with anti-detection",
+            "[DONE] Comprehensive extractors (title, description, emails, etc.)",
+            "[DONE] Advanced tech stack detection",
+            "[DONE] Enhanced speed scoring (Web Vitals aligned)",
+            "[DONE] AI summarization with RAKE algorithm",
+            "[DONE] Industry detection",
+            "[DONE] Robots.txt compliance checking",
         ],
-        "✓ Infrastructure": [
-            "✓ Docker containerization",
-            "✓ Docker Compose for local dev",
-            "✓ PostgreSQL database layer",
-            "✓ Redis caching and rate limiting",
-            "✓ Celery async task processing",
-            "✓ Alembic database migrations",
+        "[DONE] Infrastructure": [
+            "[DONE] Docker containerization",
+            "[DONE] Docker Compose for local dev",
+            "[DONE] PostgreSQL database layer",
+            "[DONE] Redis caching and rate limiting",
+            "[DONE] Celery async task processing",
+            "[DONE] Alembic database migrations",
         ],
-        "✓ Security": [
-            "✓ API key authentication",
-            "✓ Rate limiting (sliding window)",
-            "✓ CORS middleware",
-            "✓ Security headers",
-            "✓ Input validation & sanitization",
-            "✓ SSRF protection",
-            "✓ GDPR compliance features",
+        "[DONE] Security": [
+            "[DONE] API key authentication",
+            "[DONE] Rate limiting (sliding window)",
+            "[DONE] CORS middleware",
+            "[DONE] Security headers",
+            "[DONE] Input validation & sanitization",
+            "[DONE] SSRF protection",
+            "[DONE] GDPR compliance features",
         ],
-        "✓ Monitoring & Logging": [
-            "✓ Structured JSON logging",
-            "✓ Sentry error tracking",
-            "✓ OpenTelemetry tracing",
-            "✓ Prometheus metrics",
-            "✓ Health check endpoints",
+        "[DONE] Monitoring & Logging": [
+            "[DONE] Structured JSON logging",
+            "[DONE] Sentry error tracking",
+            "[DONE] OpenTelemetry tracing",
+            "[DONE] Prometheus metrics",
+            "[DONE] Health check endpoints",
         ],
-        "✓ Testing": [
-            "✓ Unit tests for all services",
-            "✓ Integration tests for endpoints",
-            "✓ Advanced service tests",
-            "✓ Extraction endpoint tests",
-            "✓ Error handling tests",
-            "✓ 100%+ code coverage target",
+        "[DONE] Testing": [
+            "[DONE] Unit tests for all services",
+            "[DONE] Integration tests for endpoints",
+            "[DONE] Advanced service tests",
+            "[DONE] Extraction endpoint tests",
+            "[DONE] Error handling tests",
+            "[DONE] 100%+ code coverage target",
         ],
-        "✓ Documentation": [
-            "✓ Comprehensive API documentation",
-            "✓ Production configuration guide",
-            "✓ Deployment procedures",
-            "✓ Kubernetes manifests",
-            "✓ Load testing scenarios",
+        "[DONE] Documentation": [
+            "[DONE] Comprehensive API documentation",
+            "[DONE] Production configuration guide",
+            "[DONE] Deployment procedures",
+            "[DONE] Kubernetes manifests",
+            "[DONE] Load testing scenarios",
+            "[DONE] Postman collection & OpenAPI spec",
         ],
     }
     

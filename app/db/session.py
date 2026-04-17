@@ -22,26 +22,30 @@ else:
 
 # Create database engine with optimized connection pooling
 engine_kwargs = {
-    "poolclass": pool_class,
-    "pool_size": pool_size,
-    "max_overflow": max_overflow,
-    "pool_timeout": pool_timeout,
-    "pool_recycle": pool_recycle,
-    "pool_pre_ping": True,  # Verify connections before use
     "echo": settings.DEBUG,
 }
 
 # SQLite needs special connect args for multithreaded test clients.
 if settings.DATABASE_URL.startswith("sqlite"):
     engine_kwargs["connect_args"] = {"check_same_thread": False}
-    # Override pool settings for SQLite
-    engine_kwargs["poolclass"] = None
-elif "postgresql" in settings.DATABASE_URL:
-    # PostgreSQL-specific connection args
-    engine_kwargs["connect_args"] = {
-        "connect_timeout": 10,
-        "options": "-c statement_timeout=30000",  # 30 second statement timeout
-    }
+    # SQLite doesn't use the standard connection pool parameters like pool_size
+else:
+    # Use standard connection pool for PostgreSQL etc.
+    engine_kwargs.update({
+        "poolclass": pool_class,
+        "pool_size": pool_size,
+        "max_overflow": max_overflow,
+        "pool_timeout": pool_timeout,
+        "pool_recycle": pool_recycle,
+        "pool_pre_ping": True,
+    })
+    
+    if "postgresql" in settings.DATABASE_URL:
+        # PostgreSQL-specific connection args
+        engine_kwargs["connect_args"] = {
+            "connect_timeout": 10,
+            "options": "-c statement_timeout=30000",  # 30 second statement timeout
+        }
 
 engine = create_engine(settings.DATABASE_URL, **engine_kwargs)
 

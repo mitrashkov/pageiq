@@ -6,6 +6,7 @@ from fastapi import Request, Response
 import structlog
 
 from app.core.config import settings
+from app.core.context import set_request_context
 
 logger = structlog.get_logger(__name__)
 
@@ -26,6 +27,12 @@ class RequestLoggingMiddleware:
         # Generate request ID
         request_id = str(uuid.uuid4())
         request.state.request_id = request_id
+        
+        # Set request context for logging
+        set_request_context(
+            request_id=request_id,
+            trace_id=request.headers.get("x-trace-id") or request.headers.get("x-request-id")
+        )
 
         # Start timing
         start_time = time.time()

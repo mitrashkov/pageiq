@@ -14,9 +14,13 @@ class ApiKey(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), index=True, nullable=False)
 
-    # Store only the hashed key. In real life we'd also store a prefix/identifier for lookup.
+    # Store hashed key and a prefix for fast lookup
     key_hash: Mapped[str] = mapped_column(String(255), nullable=False)
-    revoked: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    key_prefix: Mapped[str] = mapped_column(String(16), index=True, nullable=False)
+    name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    revoked: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False, index=True)
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
     last_used: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)

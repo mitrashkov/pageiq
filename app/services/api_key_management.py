@@ -34,6 +34,8 @@ class APIKeyManager:
         """Create a new API key for a user"""
         api_key = self.generate_key()
         key_hash = hash_api_key(api_key)
+        # Store the first 8 characters as prefix
+        key_prefix = api_key[:8]
 
         expires_at = None
         if expires_in_days:
@@ -42,6 +44,7 @@ class APIKeyManager:
         db_api_key = ApiKey(
             user_id=user_id,
             key_hash=key_hash,
+            key_prefix=key_prefix,
             name=name,
             expires_at=expires_at
         )

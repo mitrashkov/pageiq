@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import os
+import sys
 import time
 from dataclasses import dataclass, field
 from fnmatch import fnmatch
@@ -172,7 +174,7 @@ _redis_singleton: Optional[Redis] = None
 
 
 def get_redis() -> Redis:
-    """Get Redis client instance (falls back to in-memory if unavailable)."""
+    """Get Redis client instance (falls back to in-memory if unavailable in DEBUG)."""
     global _redis_singleton
     if _redis_singleton is not None:
         return _redis_singleton
@@ -182,8 +184,15 @@ def get_redis() -> Redis:
         client.ping()
         _redis_singleton = client
         return client
-    except Exception:
+    except Exception as e:
         # No Redis in local/test environment.
+        is_test = "pytest" in sys.modules or os.environ.get("PYTEST_CURRENT_TEST")
+        
+        if not settings.DEBUG and not is_test:
+            # In production, Redis is required for rate limiting and auth
+            from app.core.errors import ServiceUnavailableException
+            raise ServiceUnavailableException("Redis service is unavailable")
+        
         _redis_singleton = _InMemoryRedis()  # type: ignore[assignment]
         return _redis_singleton
 

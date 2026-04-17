@@ -9,6 +9,7 @@ import structlog
 from structlog.stdlib import LoggerFactory
 
 from app.core.config import settings
+from app.core.context import get_request_context
 
 
 def setup_logging() -> None:
@@ -118,8 +119,11 @@ class JSONFormatter(logging.Formatter):
 
 
 def _add_request_context(logger: logging.Logger, method_name: str, event_dict: Dict[str, Any]) -> Dict[str, Any]:
-    """Add request context to log events"""
-    # This will be enhanced when we have request context
+    """Add request context to log events from context variables"""
+    ctx = get_request_context()
+    for key, value in ctx.items():
+        if value:
+            event_dict[key] = value
     return event_dict
 
 

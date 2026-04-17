@@ -21,6 +21,7 @@ from app.services.robots_checker import robots_checker
 from app.services.screenshot import screenshot_service
 from app.services.analyzer import analyze_url as analyze_url_core
 from app.services.analytics import analytics_service
+from app.core.cache import get_cached_response, set_cached_response, generate_cache_key
 
 router = APIRouter()
 
@@ -47,6 +48,21 @@ async def analyze_website(
     start_time = time.time()
     request_id = str(uuid.uuid4())
 
+    # 1. Check Cache first
+    options = dict(request.options or {})
+    cache_key = generate_cache_key("analyze", url=request.url, **options)
+    
+    # Only use cache if no fresh analysis is explicitly requested (can add an option for this)
+    if not options.get("refresh_cache"):
+        cached_data = await get_cached_response(cache_key)
+        if cached_data:
+            return APIResponse.success(
+                data=cached_data,
+                request_id=f"cached_{request_id}",
+                processing_time_ms=0,
+                quota_remaining=quota_service.get_quota_info(user, db).get('remaining', 0) if user else 0
+            )
+
     try:
         # Check quota
         quota_allowed, quota_remaining, quota_limit = quota_service.check_quota(user, db)
@@ -71,6 +87,9 @@ async def analyze_website(
 
         # Track analyzed domain for analytics.
         analytics_service.track_analyzed_url(request.url)
+
+        # 2. Store in cache
+        await set_cached_response(cache_key, data)
 
         # Consume quota
         if user:
