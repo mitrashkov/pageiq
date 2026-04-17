@@ -1,717 +1,654 @@
 """
-Web-based documentation and interactive test suite for PageIQ API.
-Accessible at /docs for documentation and /tests for interactive testing.
+Web-based documentation and comprehensive interactive test suite for PageIQ API.
+Accessible at /docs for documentation and /tests for manual testing all endpoints.
 """
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 from fastapi.responses import HTMLResponse
-import httpx
-import os
 
 router = APIRouter()
 
-DOCS_HTML = """
+TEST_PAGE_HTML = """
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PageIQ API Documentation</title>
+    <title>PageIQ API - Interactive Test Suite</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
+            padding: 20px;
             color: #333;
         }
         
         .container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
-            padding: 20px;
         }
         
-        nav {
+        header {
             background: white;
-            padding: 20px;
-            border-radius: 8px;
+            padding: 30px;
+            border-radius: 10px;
             margin-bottom: 30px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-        
-        nav button {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
-            background: #f0f0f0;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
-            transition: all 0.3s ease;
-        }
-        
-        nav button:hover {
-            background: #667eea;
-            color: white;
-        }
-        
-        nav button.active {
-            background: #667eea;
-            color: white;
-        }
-        
-        .header {
-            background: white;
-            padding: 40px;
-            border-radius: 8px;
-            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
             text-align: center;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
         
-        .header h1 {
+        h1 {
             color: #667eea;
             margin-bottom: 10px;
-            font-size: 36px;
+            font-size: 32px;
         }
         
-        .header p {
+        .subtitle {
             color: #666;
             font-size: 16px;
         }
         
-        .content {
-            background: white;
-            padding: 40px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        
-        .section {
-            display: none;
-        }
-        
-        .section.active {
-            display: block;
-        }
-        
-        .endpoint {
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 20px;
             margin-bottom: 30px;
-            padding: 20px;
-            background: #f9f9f9;
-            border-left: 4px solid #667eea;
-            border-radius: 4px;
         }
         
-        .endpoint-title {
-            font-size: 18px;
-            font-weight: bold;
-            color: #667eea;
-            margin-bottom: 10px;
-        }
-        
-        .method {
-            display: inline-block;
-            padding: 4px 10px;
-            border-radius: 4px;
-            font-size: 12px;
-            font-weight: bold;
-            margin-right: 10px;
-        }
-        
-        .method.get {
-            background: #4CAF50;
-            color: white;
-        }
-        
-        .method.post {
-            background: #2196F3;
-            color: white;
-        }
-        
-        .method.delete {
-            background: #f44336;
-            color: white;
-        }
-        
-        .endpoint-path {
-            font-family: 'Courier New', monospace;
+        .sidebar {
             background: white;
-            padding: 10px;
-            border-radius: 4px;
-            margin: 10px 0;
-            overflow-x: auto;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            max-height: 600px;
+            overflow-y: auto;
         }
         
-        .endpoint-description {
-            color: #666;
-            margin: 10px 0;
+        .endpoint-list {
+            list-style: none;
+        }
+        
+        .endpoint-item {
+            padding: 12px 15px;
+            margin-bottom: 8px;
+            background: #f5f5f5;
+            border-left: 4px solid #667eea;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+            font-weight: 500;
             font-size: 14px;
         }
         
-        .code-block {
-            background: #2d2d2d;
-            color: #f8f8f2;
-            padding: 15px;
-            border-radius: 4px;
-            overflow-x: auto;
-            margin: 10px 0;
-            font-family: 'Courier New', monospace;
-            font-size: 13px;
+        .endpoint-item:hover {
+            background: #e8e8ff;
+            border-left-color: #764ba2;
+            transform: translateX(5px);
         }
         
-        .test-btn {
+        .endpoint-item.active {
             background: #667eea;
             color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            margin-top: 10px;
-            font-size: 14px;
-            transition: background 0.3s ease;
+            border-left-color: #764ba2;
         }
         
-        .test-btn:hover {
-            background: #764ba2;
+        .method-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 11px;
+            font-weight: bold;
+            margin-right: 8px;
         }
         
-        .test-result {
-            background: #f0f0f0;
-            padding: 15px;
-            border-radius: 4px;
-            margin-top: 10px;
-            border-left: 4px solid #4CAF50;
+        .method-get { background: #4CAF50; color: white; }
+        .method-post { background: #2196F3; color: white; }
+        .method-delete { background: #f44336; color: white; }
+        
+        .tester-panel {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
         }
         
-        .test-result.error {
-            border-left-color: #f44336;
-            background: #ffebee;
-        }
-        
-        .feature-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            margin: 20px 0;
-        }
-        
-        .feature-card {
-            background: #f9f9f9;
-            padding: 20px;
-            border-radius: 8px;
-            border: 1px solid #e0e0e0;
-        }
-        
-        .feature-card h3 {
-            color: #667eea;
-            margin-bottom: 10px;
-        }
-        
-        .feature-card p {
-            color: #666;
-            font-size: 14px;
-            line-height: 1.6;
-        }
-        
-        .tabs {
-            display: flex;
-            gap: 10px;
-            margin: 20px 0;
-            border-bottom: 2px solid #e0e0e0;
-        }
-        
-        .tab {
-            padding: 10px 20px;
-            cursor: pointer;
-            background: none;
-            border: none;
-            font-size: 14px;
-            color: #666;
-            border-bottom: 3px solid transparent;
-            transition: all 0.3s ease;
-        }
-        
-        .tab:hover {
-            color: #667eea;
-        }
-        
-        .tab.active {
-            color: #667eea;
-            border-bottom-color: #667eea;
-        }
-        
-        .tab-content {
-            display: none;
-        }
-        
-        .tab-content.active {
-            display: block;
-        }
-        
-        input, textarea, select {
-            padding: 10px;
-            margin: 5px 0;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-family: 'Courier New', monospace;
-            width: 100%;
+        .form-group {
+            margin-bottom: 20px;
         }
         
         label {
             display: block;
-            margin-top: 10px;
-            font-weight: 500;
+            font-weight: 600;
+            margin-bottom: 8px;
             color: #333;
+        }
+        
+        input, textarea, select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            transition: border-color 0.2s ease;
+        }
+        
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        
+        button {
+            background: #667eea;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        
+        button:hover {
+            background: #764ba2;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .btn-secondary {
+            background: #666;
+        }
+        
+        .btn-secondary:hover {
+            background: #555;
+        }
+        
+        .results-panel {
+            margin-top: 30px;
+            background: #f5f5f5;
+            border-radius: 10px;
+            padding: 20px;
+            border: 2px solid #e0e0e0;
+        }
+        
+        .result-section {
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .result-section.active {
+            display: block;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 12px;
+            margin-bottom: 15px;
+        }
+        
+        .status-success { background: #4CAF50; color: white; }
+        .status-error { background: #f44336; color: white; }
+        .status-loading { background: #FF9800; color: white; }
+        
+        .request-display {
+            background: white;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            border-left: 4px solid #2196F3;
+        }
+        
+        .response-display {
+            background: white;
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 4px solid #4CAF50;
+        }
+        
+        .response-display.error {
+            border-left-color: #f44336;
+        }
+        
+        .code-box {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 15px;
+            border-radius: 6px;
+            text-align: center;
+            border-top: 4px solid #667eea;
+        }
+        
+        .stat-number {
+            font-size: 28px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        .test-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .filter-btn {
+            padding: 8px 16px;
+            background: #f0f0f0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .filter-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+        
+        @media (max-width: 1024px) {
+            .main-grid { grid-template-columns: 1fr; }
+            .sidebar { max-height: none; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .form-row { grid-template-columns: 1fr; }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <nav>
-            <button class="nav-btn active" onclick="switchSection('overview')">📖 Overview</button>
-            <button class="nav-btn" onclick="switchSection('endpoints')">🔌 Endpoints</button>
-            <button class="nav-btn" onclick="switchSection('auth')">🔐 Authentication</button>
-            <button class="nav-btn" onclick="switchSection('testing')">🧪 Testing</button>
-            <button class="nav-btn" onclick="switchSection('examples')">💡 Examples</button>
-        </nav>
+        <header>
+            <h1>🚀 PageIQ API - Interactive Test Suite</h1>
+            <p class="subtitle">Test every endpoint in real-time. Make requests, see responses. Full control.</p>
+        </header>
         
-        <div class="header">
-            <h1>🚀 PageIQ API Documentation</h1>
-            <p>Professional website analysis and data extraction API</p>
-        </div>
-        
-        <!-- Overview Section -->
-        <div id="overview" class="section active">
-            <div class="content">
-                <h2>Welcome to PageIQ API</h2>
-                <p style="margin: 20px 0; color: #666; line-height: 1.8;">
-                    PageIQ is a comprehensive API for analyzing websites, extracting data, and gaining insights about web pages.
-                    Our API provides powerful tools for developers and businesses to understand and interact with web content programmatically.
-                </p>
-                
-                <h3 style="color: #667eea; margin: 20px 0 10px;">Key Features</h3>
-                <div class="feature-grid">
-                    <div class="feature-card">
-                        <h3>🔍 Website Analysis</h3>
-                        <p>Analyze any website to extract metadata, technology stack, performance metrics, and more.</p>
-                    </div>
-                    <div class="feature-card">
-                        <h3>📧 Email Extraction</h3>
-                        <p>Automatically extract email addresses from websites for lead generation and data collection.</p>
-                    </div>
-                    <div class="feature-card">
-                        <h3>📊 Batch Processing</h3>
-                        <p>Process multiple websites simultaneously with our powerful batch API for bulk analysis.</p>
-                    </div>
-                    <div class="feature-card">
-                        <h3>⚡ Real-time Results</h3>
-                        <p>Get instant responses with real-time website analysis and data extraction.</p>
-                    </div>
-                    <div class="feature-card">
-                        <h3>🔒 Secure & Reliable</h3>
-                        <p>Enterprise-grade security with rate limiting, API keys, and HTTPS encryption.</p>
-                    </div>
-                    <div class="feature-card">
-                        <h3>📈 Analytics</h3>
-                        <p>Track your API usage with detailed analytics and performance metrics.</p>
-                    </div>
-                </div>
-                
-                <h3 style="color: #667eea; margin: 30px 0 10px;">Quick Start</h3>
-                <div class="code-block">curl -X POST https://pageiq.pompora.dev/analyze \\
-  -H "Content-Type: application/json" \\
-  -H "X-API-Key: your_api_key_here" \\
-  -d '{"url": "https://example.com"}'
-                </div>
-                
-                <p style="color: #666; margin: 20px 0;">
-                    Navigate to the <strong>Endpoints</strong> tab to see all available API endpoints,
-                    visit <strong>Authentication</strong> to learn about securing your requests,
-                    or jump to <strong>Testing</strong> to try endpoints directly from your browser.
-                </p>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number" id="total-tests">0</div>
+                <div class="stat-label">Total Tests</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="passed-tests">0</div>
+                <div class="stat-label">Passed</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="failed-tests">0</div>
+                <div class="stat-label">Failed</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="avg-time">0ms</div>
+                <div class="stat-label">Avg Response</div>
             </div>
         </div>
         
-        <!-- Endpoints Section -->
-        <div id="endpoints" class="section">
-            <div class="content">
-                <h2>API Endpoints</h2>
-                
-                <div class="endpoint">
-                    <div class="endpoint-title">
-                        <span class="method get">GET</span> Health Check
-                    </div>
-                    <div class="endpoint-path">/ping</div>
-                    <div class="endpoint-description">
-                        Simple health check endpoint. Returns 200 OK if the API is running.
-                    </div>
-                    <button class="test-btn" onclick="testEndpoint('GET', '/ping', {})">Test Endpoint</button>
-                    <div id="ping-result"></div>
-                </div>
-                
-                <div class="endpoint">
-                    <div class="endpoint-title">
-                        <span class="method post">POST</span> Analyze Website
-                    </div>
-                    <div class="endpoint-path">/analyze</div>
-                    <div class="endpoint-description">
-                        Analyze a website and extract comprehensive information including metadata, technology stack, performance metrics, and more.
-                    </div>
-                    <div class="code-block">{
-  "url": "https://example.com",
-  "wait_for_js": true,
-  "extract_emails": false
-}
-                    </div>
-                    <button class="test-btn" onclick="testEndpoint('POST', '/analyze', {'url': 'https://example.com'})">Test Endpoint</button>
-                    <div id="analyze-result"></div>
-                </div>
-                
-                <div class="endpoint">
-                    <div class="endpoint-title">
-                        <span class="method post">POST</span> Batch Analyze
-                    </div>
-                    <div class="endpoint-path">/batch-analyze</div>
-                    <div class="endpoint-description">
-                        Analyze multiple websites in a single batch request. Returns a batch ID for tracking progress.
-                    </div>
-                    <div class="code-block">{
-  "urls": ["https://example.com", "https://example.org"],
-  "wait_for_js": true
-}
-                    </div>
-                    <button class="test-btn" onclick="testEndpoint('POST', '/batch-analyze', {'urls': ['https://example.com']})">Test Endpoint</button>
-                    <div id="batch-result"></div>
-                </div>
-                
-                <div class="endpoint">
-                    <div class="endpoint-title">
-                        <span class="method post">POST</span> Extract Emails
-                    </div>
-                    <div class="endpoint-path">/extract/emails</div>
-                    <div class="endpoint-description">
-                        Extract email addresses from a website. Scans the page content and returns all found email addresses.
-                    </div>
-                    <div class="code-block">{
-  "url": "https://example.com"
-}
-                    </div>
-                    <button class="test-btn" onclick="testEndpoint('POST', '/extract/emails', {'url': 'https://example.com'})">Test Endpoint</button>
-                    <div id="extract-result"></div>
-                </div>
-                
-                <div class="endpoint">
-                    <div class="endpoint-title">
-                        <span class="method get">GET</span> API Status
-                    </div>
-                    <div class="endpoint-path">/</div>
-                    <div class="endpoint-description">
-                        Get the current status of the PageIQ API including version and basic information.
-                    </div>
-                    <button class="test-btn" onclick="testEndpoint('GET', '/', {})">Test Endpoint</button>
-                    <div id="status-result"></div>
-                </div>
+        <div class="main-grid">
+            <div class="sidebar">
+                <h3 style="margin-bottom: 15px; color: #333;">Endpoints</h3>
+                <ul class="endpoint-list" id="endpoint-list"></ul>
             </div>
-        </div>
-        
-        <!-- Authentication Section -->
-        <div id="auth" class="section">
-            <div class="content">
-                <h2>Authentication</h2>
-                <p style="margin: 20px 0; color: #666; line-height: 1.8;">
-                    PageIQ API uses API key-based authentication. All requests (except health checks) must include a valid API key.
-                </p>
-                
-                <h3 style="color: #667eea; margin: 20px 0 10px;">API Key Header</h3>
-                <p style="color: #666; margin: 10px 0;">
-                    Include your API key in the <code>X-API-Key</code> header:
-                </p>
-                <div class="code-block">curl -X POST https://pageiq.pompora.dev/analyze \\
-  -H "X-API-Key: your_api_key_here" \\
-  -H "Content-Type: application/json" \\
-  -d '{"url": "https://example.com"}'
+            
+            <div class="tester-panel">
+                <div class="test-controls">
+                    <button class="filter-btn active" onclick="filterEndpoints('all')">All</button>
+                    <button class="filter-btn" onclick="filterEndpoints('health')">Health</button>
+                    <button class="filter-btn" onclick="filterEndpoints('analyze')">Analysis</button>
+                    <button class="filter-btn" onclick="filterEndpoints('extract')">Extraction</button>
+                    <button class="filter-btn" onclick="filterEndpoints('batch')">Batch</button>
                 </div>
                 
-                <h3 style="color: #667eea; margin: 20px 0 10px;">Getting Your API Key</h3>
-                <p style="color: #666; margin: 10px 0;">
-                    1. Sign up for a PageIQ account<br>
-                    2. Navigate to your dashboard<br>
-                    3. Go to API Keys section<br>
-                    4. Click "Generate New Key"<br>
-                    5. Copy your key and keep it secure
-                </p>
+                <div id="endpoint-form"></div>
                 
-                <h3 style="color: #667eea; margin: 20px 0 10px;">Rate Limiting</h3>
-                <p style="color: #666; margin: 10px 0;">
-                    API requests are rate limited based on your account tier:
-                </p>
-                <ul style="color: #666; margin: 10px 0 10px 20px;">
-                    <li>Free Tier: 100 requests per day</li>
-                    <li>Pro Tier: 10,000 requests per day</li>
-                    <li>Enterprise Tier: Unlimited requests</li>
-                </ul>
-                
-                <h3 style="color: #667eea; margin: 20px 0 10px;">Security Best Practices</h3>
-                <ul style="color: #666; margin: 10px 0 10px 20px;">
-                    <li>Never share your API key publicly</li>
-                    <li>Use environment variables to store your API key</li>
-                    <li>Rotate your API keys regularly</li>
-                    <li>Use HTTPS for all requests</li>
-                    <li>Monitor your API usage for suspicious activity</li>
-                </ul>
-            </div>
-        </div>
-        
-        <!-- Testing Section -->
-        <div id="testing" class="section">
-            <div class="content">
-                <h2>Interactive API Testing</h2>
-                <p style="margin: 20px 0; color: #666;">
-                    Test the PageIQ API directly from your browser. Note: Health checks don't require authentication.
-                </p>
-                
-                <div style="background: #f9f9f9; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                    <h3 style="color: #333; margin-bottom: 15px;">🧪 Test Panel</h3>
-                    
-                    <label for="test-url">Website URL:</label>
-                    <input type="text" id="test-url" placeholder="https://example.com" value="https://example.com">
-                    
-                    <label for="test-apikey">API Key (optional for health checks):</label>
-                    <input type="password" id="test-apikey" placeholder="Leave empty for health checks">
-                    
-                    <label for="test-endpoint">Select Endpoint:</label>
-                    <select id="test-endpoint">
-                        <option value="ping">GET /ping (Health Check)</option>
-                        <option value="status">GET / (API Status)</option>
-                        <option value="analyze">POST /analyze (Analyze Website)</option>
-                        <option value="extract">POST /extract/emails (Extract Emails)</option>
-                        <option value="batch">POST /batch-analyze (Batch Analyze)</option>
-                    </select>
-                    
-                    <button class="test-btn" onclick="runCustomTest()" style="margin-top: 15px; width: 100%;">
-                        ⚡ Run Test
-                    </button>
-                    
-                    <div id="custom-result" style="margin-top: 20px;"></div>
+                <div class="button-group">
+                    <button onclick="sendTestRequest()">🚀 Send Request</button>
+                    <button class="btn-secondary" onclick="clearForm()">Clear</button>
+                    <button class="btn-secondary" onclick="clearResults()">Clear Results</button>
                 </div>
                 
-                <h3 style="color: #667eea; margin: 30px 0 15px;">Quick Test Buttons</h3>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
-                    <button class="test-btn" onclick="testEndpoint('GET', '/ping', {})" style="width: 100%;">
-                        Test Health Check
-                    </button>
-                    <button class="test-btn" onclick="testEndpoint('GET', '/', {})" style="width: 100%;">
-                        Test API Status
-                    </button>
-                    <button class="test-btn" onclick="testEndpoint('POST', '/analyze', {'url': 'https://example.com'})" style="width: 100%;">
-                        Test Analyze
-                    </button>
-                    <button class="test-btn" onclick="testEndpoint('POST', '/extract/emails', {'url': 'https://example.com'})" style="width: 100%;">
-                        Test Email Extract
-                    </button>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Examples Section -->
-        <div id="examples" class="section">
-            <div class="content">
-                <h2>Code Examples</h2>
-                
-                <h3 style="color: #667eea; margin: 20px 0 10px;">Python</h3>
-                <div class="code-block">import requests
-
-api_key = "your_api_key_here"
-headers = {
-    "X-API-Key": api_key,
-    "Content-Type": "application/json"
-}
-
-# Analyze a website
-response = requests.post(
-    "https://pageiq.pompora.dev/analyze",
-    headers=headers,
-    json={"url": "https://example.com"}
-)
-print(response.json())
-
-# Extract emails
-response = requests.post(
-    "https://pageiq.pompora.dev/extract/emails",
-    headers=headers,
-    json={"url": "https://example.com"}
-)
-print(response.json())
-                </div>
-                
-                <h3 style="color: #667eea; margin: 20px 0 10px;">JavaScript</h3>
-                <div class="code-block">const apiKey = "your_api_key_here";
-
-// Analyze a website
-fetch("https://pageiq.pompora.dev/analyze", {
-    method: "POST",
-    headers: {
-        "X-API-Key": apiKey,
-        "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-        url: "https://example.com"
-    })
-})
-.then(res => res.json())
-.then(data => console.log(data));
-
-// Extract emails
-fetch("https://pageiq.pompora.dev/extract/emails", {
-    method: "POST",
-    headers: {
-        "X-API-Key": apiKey,
-        "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-        url: "https://example.com"
-    })
-})
-.then(res => res.json())
-.then(data => console.log(data));
-                </div>
-                
-                <h3 style="color: #667eea; margin: 20px 0 10px;">cURL</h3>
-                <div class="code-block"># Analyze a website
-curl -X POST https://pageiq.pompora.dev/analyze \\
-  -H "X-API-Key: your_api_key_here" \\
-  -H "Content-Type: application/json" \\
-  -d '{"url": "https://example.com"}'
-
-# Extract emails
-curl -X POST https://pageiq.pompora.dev/extract/emails \\
-  -H "X-API-Key: your_api_key_here" \\
-  -H "Content-Type: application/json" \\
-  -d '{"url": "https://example.com"}'
-
-# Health check
-curl https://pageiq.pompora.dev/ping
+                <div class="results-panel">
+                    <div class="result-section active" id="results-placeholder">
+                        <p style="color: #999; text-align: center;">Results will appear here...</p>
+                    </div>
+                    <div class="result-section" id="results-content"></div>
                 </div>
             </div>
         </div>
     </div>
     
     <script>
-        async function switchSection(section) {
-            // Hide all sections
-            document.querySelectorAll('.section').forEach(el => {
-                el.classList.remove('active');
+        const ENDPOINTS = [
+            {
+                name: 'Health Check',
+                path: '/api/v1/ping',
+                method: 'GET',
+                category: 'health',
+                description: 'Simple health check',
+                params: []
+            },
+            {
+                name: 'API Status',
+                path: '/api/v1/',
+                method: 'GET',
+                category: 'health',
+                description: 'Get API status information',
+                params: []
+            },
+            {
+                name: 'Analyze Website',
+                path: '/api/v1/analyze',
+                method: 'POST',
+                category: 'analyze',
+                description: 'Analyze a website and extract comprehensive data',
+                params: [
+                    { name: 'url', type: 'text', required: true, placeholder: 'https://example.com' },
+                    { name: 'wait_for_js', type: 'checkbox', required: false, default: false }
+                ]
+            },
+            {
+                name: 'Batch Analyze',
+                path: '/api/v1/batch-analyze',
+                method: 'POST',
+                category: 'batch',
+                description: 'Analyze multiple websites in one request',
+                params: [
+                    { name: 'urls', type: 'textarea', required: true, placeholder: 'https://example.com\\nhttps://example.org' }
+                ]
+            },
+            {
+                name: 'Extract Emails',
+                path: '/api/v1/extract/emails',
+                method: 'POST',
+                category: 'extract',
+                description: 'Extract email addresses from a website',
+                params: [
+                    { name: 'url', type: 'text', required: true, placeholder: 'https://example.com' }
+                ]
+            },
+            {
+                name: 'Extract Schema',
+                path: '/api/v1/extract/schema',
+                method: 'POST',
+                category: 'extract',
+                description: 'Extract structured data (Schema.org)',
+                params: [
+                    { name: 'url', type: 'text', required: true, placeholder: 'https://example.com' }
+                ]
+            },
+            {
+                name: 'Extract Metadata',
+                path: '/api/v1/extract/metadata',
+                method: 'POST',
+                category: 'extract',
+                description: 'Extract metadata from website',
+                params: [
+                    { name: 'url', type: 'text', required: true, placeholder: 'https://example.com' }
+                ]
+            },
+            {
+                name: 'SEO Audit',
+                path: '/api/v1/seo/seo-audit',
+                method: 'POST',
+                category: 'analyze',
+                description: 'Perform SEO audit on a website',
+                params: [
+                    { name: 'url', type: 'text', required: true, placeholder: 'https://example.com' }
+                ]
+            },
+            {
+                name: 'Broken Links',
+                path: '/api/v1/seo/broken-links',
+                method: 'POST',
+                category: 'analyze',
+                description: 'Find broken links on a website',
+                params: [
+                    { name: 'url', type: 'text', required: true, placeholder: 'https://example.com' }
+                ]
+            }
+        ];
+        
+        let currentEndpoint = null;
+        let testStats = { total: 0, passed: 0, failed: 0, times: [] };
+        
+        function initEndpointList() {
+            const list = document.getElementById('endpoint-list');
+            list.innerHTML = ENDPOINTS.map((ep, idx) => `
+                <li class="endpoint-item ${idx === 0 ? 'active' : ''}" onclick="selectEndpoint(${idx})">
+                    <span class="method-badge method-${ep.method.toLowerCase()}">${ep.method}</span>
+                    ${ep.name}
+                </li>
+            `).join('');
+            selectEndpoint(0);
+        }
+        
+        function selectEndpoint(idx) {
+            currentEndpoint = ENDPOINTS[idx];
+            document.querySelectorAll('.endpoint-item').forEach((el, i) => {
+                el.classList.toggle('active', i === idx);
             });
+            renderForm();
+            clearResults();
+        }
+        
+        function renderForm() {
+            if (!currentEndpoint) return;
             
-            // Show selected section
-            const selectedSection = document.getElementById(section);
-            if (selectedSection) {
-                selectedSection.classList.add('active');
+            let html = `<h3>${currentEndpoint.name}</h3>
+                        <p style="color: #666; margin-bottom: 15px; font-size: 14px;">${currentEndpoint.description}</p>
+                        <div class="code-box">${currentEndpoint.method} ${currentEndpoint.path}</div>`;
+            
+            if (currentEndpoint.params.length > 0) {
+                html += '<div style="margin-top: 20px;">';
+                currentEndpoint.params.forEach(param => {
+                    if (param.type === 'checkbox') {
+                        html += `<div class="form-group">
+                            <label><input type="checkbox" id="param-${param.name}" ${param.default ? 'checked' : ''}> ${param.name}</label>
+                        </div>`;
+                    } else if (param.type === 'textarea') {
+                        html += `<div class="form-group">
+                            <label>${param.name}</label>
+                            <textarea id="param-${param.name}" placeholder="${param.placeholder}"></textarea>
+                        </div>`;
+                    } else {
+                        html += `<div class="form-group">
+                            <label>${param.name} ${param.required ? '<span style="color:red;">*</span>' : ''}</label>
+                            <input type="text" id="param-${param.name}" placeholder="${param.placeholder}">
+                        </div>`;
+                    }
+                });
+                html += '</div>';
             }
             
-            // Update nav buttons
-            document.querySelectorAll('.nav-btn').forEach(btn => {
-                btn.classList.remove('active');
+            document.getElementById('endpoint-form').innerHTML = html;
+        }
+        
+        async function sendTestRequest() {
+            if (!currentEndpoint) return;
+            
+            const startTime = performance.now();
+            let body = null;
+            
+            if (currentEndpoint.method === 'POST') {
+                body = {};
+                currentEndpoint.params.forEach(param => {
+                    const input = document.getElementById(`param-${param.name}`);
+                    if (input) {
+                        if (param.type === 'checkbox') {
+                            body[param.name] = input.checked;
+                        } else if (param.type === 'textarea') {
+                            const lines = input.value.trim().split('\\n');
+                            body[param.name] = param.name.includes('url') ? lines : input.value;
+                        } else {
+                            body[param.name] = input.value;
+                        }
+                    }
+                });
+            }
+            
+            try {
+                const options = {
+                    method: currentEndpoint.method,
+                    headers: { 'Content-Type': 'application/json' }
+                };
+                
+                if (body) options.body = JSON.stringify(body);
+                
+                const response = await fetch(currentEndpoint.path, options);
+                const data = await response.json();
+                const elapsed = performance.now() - startTime;
+                
+                testStats.total++;
+                testStats.times.push(elapsed);
+                
+                if (response.ok) {
+                    testStats.passed++;
+                } else {
+                    testStats.failed++;
+                }
+                
+                updateStats();
+                displayResults(response, data, body, elapsed);
+            } catch (error) {
+                testStats.total++;
+                testStats.failed++;
+                updateStats();
+                displayError(error);
+            }
+        }
+        
+        function displayResults(response, data, body, elapsed) {
+            const resultsContent = document.getElementById('results-content');
+            const placeholder = document.getElementById('results-placeholder');
+            
+            placeholder.classList.remove('active');
+            resultsContent.classList.add('active');
+            
+            const statusClass = response.ok ? 'success' : 'error';
+            
+            resultsContent.innerHTML = `
+                <div class="status-badge status-${statusClass}">
+                    Status: ${response.status} ${response.statusText} • Response time: ${elapsed.toFixed(0)}ms
+                </div>
+                
+                <div class="request-display">
+                    <h4 style="margin-bottom: 10px;">Request</h4>
+                    <div class="code-box">${escapeHtml(JSON.stringify({ method: currentEndpoint.method, path: currentEndpoint.path, body }, null, 2))}</div>
+                </div>
+                
+                <div class="response-display ${statusClass === 'error' ? 'error' : ''}">
+                    <h4 style="margin-bottom: 10px;">Response</h4>
+                    <div class="code-box">${escapeHtml(JSON.stringify(data, null, 2))}</div>
+                </div>
+            `;
+        }
+        
+        function displayError(error) {
+            const resultsContent = document.getElementById('results-content');
+            const placeholder = document.getElementById('results-placeholder');
+            
+            placeholder.classList.remove('active');
+            resultsContent.classList.add('active');
+            
+            resultsContent.innerHTML = `
+                <div class="status-badge status-error">Error</div>
+                <div class="response-display error">
+                    <h4 style="margin-bottom: 10px;">Error</h4>
+                    <div class="code-box">${escapeHtml(error.message)}</div>
+                </div>
+            `;
+        }
+        
+        function updateStats() {
+            document.getElementById('total-tests').textContent = testStats.total;
+            document.getElementById('passed-tests').textContent = testStats.passed;
+            document.getElementById('failed-tests').textContent = testStats.failed;
+            
+            if (testStats.times.length > 0) {
+                const avg = testStats.times.reduce((a, b) => a + b) / testStats.times.length;
+                document.getElementById('avg-time').textContent = avg.toFixed(0) + 'ms';
+            }
+        }
+        
+        function clearForm() {
+            currentEndpoint?.params.forEach(param => {
+                const input = document.getElementById(`param-${param.name}`);
+                if (input) {
+                    if (param.type === 'checkbox') {
+                        input.checked = param.default || false;
+                    } else {
+                        input.value = '';
+                    }
+                }
             });
+        }
+        
+        function clearResults() {
+            document.getElementById('results-content').classList.remove('active');
+            document.getElementById('results-placeholder').classList.add('active');
+        }
+        
+        function filterEndpoints(category) {
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
             event.target.classList.add('active');
         }
         
-        async function testEndpoint(method, path, data = {}) {
-            const resultDivId = path.replace('/', '').replace('-', '-') + '-result';
-            const resultDiv = document.getElementById(resultDivId);
-            
-            if (!resultDiv) return;
-            
-            resultDiv.innerHTML = '<p style="color: #666;">Loading...</p>';
-            
-            try {
-                const options = {
-                    method: method,
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                };
-                
-                if (method === 'POST' && Object.keys(data).length > 0) {
-                    options.body = JSON.stringify(data);
-                }
-                
-                const response = await fetch(path, options);
-                const result = await response.json();
-                
-                resultDiv.className = response.ok ? 'test-result' : 'test-result error';
-                resultDiv.innerHTML = `
-                    <strong>Status: ${response.status} ${response.statusText}</strong><br>
-                    <pre style="margin-top: 10px; overflow-x: auto;">${JSON.stringify(result, null, 2)}</pre>
-                `;
-            } catch (error) {
-                resultDiv.className = 'test-result error';
-                resultDiv.innerHTML = `<strong>Error:</strong> ${error.message}`;
-            }
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
         }
         
-        async function runCustomTest() {
-            const url = document.getElementById('test-url').value;
-            const apiKey = document.getElementById('test-apikey').value;
-            const endpoint = document.getElementById('test-endpoint').value;
-            const resultDiv = document.getElementById('custom-result');
-            
-            resultDiv.innerHTML = '<p style="color: #666;">Loading...</p>';
-            
-            try {
-                const options = {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                };
-                
-                let path = '';
-                
-                if (endpoint === 'ping') {
-                    path = '/ping';
-                } else if (endpoint === 'status') {
-                    path = '/';
-                } else if (endpoint === 'analyze') {
-                    options.method = 'POST';
-                    options.body = JSON.stringify({ url: url });
-                    path = '/analyze';
-                } else if (endpoint === 'extract') {
-                    options.method = 'POST';
-                    options.body = JSON.stringify({ url: url });
-                    path = '/extract/emails';
-                } else if (endpoint === 'batch') {
-                    options.method = 'POST';
-                    options.body = JSON.stringify({ urls: [url] });
-                    path = '/batch-analyze';
-                }
-                
-                if (apiKey) {
-                    options.headers['X-API-Key'] = apiKey;
-                }
-                
-                const response = await fetch(path, options);
-                const result = await response.json();
-                
-                resultDiv.className = response.ok ? 'test-result' : 'test-result error';
-                resultDiv.innerHTML = `
-                    <strong>Status: ${response.status} ${response.statusText}</strong><br>
-                    <pre style="margin-top: 10px; overflow-x: auto;">${JSON.stringify(result, null, 2)}</pre>
-                `;
-            } catch (error) {
-                resultDiv.className = 'test-result error';
-                resultDiv.innerHTML = `<strong>Error:</strong> ${error.message}`;
-            }
-        }
+        // Initialize on load
+        window.addEventListener('load', initEndpointList);
     </script>
 </body>
 </html>
@@ -720,9 +657,9 @@ curl https://pageiq.pompora.dev/ping
 @router.get("/docs", response_class=HTMLResponse)
 async def get_docs():
     """Serve the documentation page"""
-    return DOCS_HTML
+    return TEST_PAGE_HTML
 
 @router.get("/tests", response_class=HTMLResponse)
 async def get_tests():
     """Serve the interactive testing page"""
-    return DOCS_HTML
+    return TEST_PAGE_HTML
