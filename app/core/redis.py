@@ -189,9 +189,13 @@ def get_redis() -> Redis:
         is_test = "pytest" in sys.modules or os.environ.get("PYTEST_CURRENT_TEST")
         
         if not settings.DEBUG and not is_test:
-            # In production, Redis is required for rate limiting and auth
-            from app.core.errors import ServiceUnavailableException
-            raise ServiceUnavailableException("Redis service is unavailable")
+            # In production, log a warning but fallback to in-memory to prevent startup crash
+            # Features needing Redis (rate limiting, analytics) will use in-memory store
+            import logging
+            logging.getLogger(__name__).warning(
+                f"Redis service is unavailable ({str(e)}). Falling back to in-memory store. "
+                "Note: Rate limiting and analytics will not be persistent across restarts."
+            )
         
         _redis_singleton = _InMemoryRedis()  # type: ignore[assignment]
         return _redis_singleton

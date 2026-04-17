@@ -30,30 +30,41 @@ def get_current_user(
     rapidapi_proxy_secret = request.headers.get("x-rapidapi-proxy-secret")
     rapidapi_user_id = request.headers.get("x-rapidapi-user")
     
-    if rapidapi_proxy_secret and settings.RAPIDAPI_PROXY_SECRET:
-        if rapidapi_proxy_secret == settings.RAPIDAPI_PROXY_SECRET:
-            # Trusted RapidAPI request
-            email = f"rapidapi_{rapidapi_user_id}@pageiq.api"
-            user = db.query(User).filter(User.email == email).first()
-            if not user:
-                # Auto-create RapidAPI user if it doesn't exist
-                user = User(
-                    email=email,
-                    plan=request.headers.get("x-rapidapi-subscription", "free").lower()
-                )
-                db.add(user)
-                db.commit()
-                db.refresh(user)
-                logger.info(f"Auto-created RapidAPI user: {email}")
-            
-            request.state.user_id = user.id
-            request.state.is_rapidapi = True
-            set_request_context(user_id=user.id)
-            return user
+    # If a secret is provided, we MUST verify it if it's configured.
+    # If NOT configured, we fallback to trusting the other headers for ease of initial setup.
+    is_trusted_rapidapi = False
+    if rapidapi_proxy_secret:
+        if settings.RAPIDAPI_PROXY_SECRET:
+            if rapidapi_proxy_secret == settings.RAPIDAPI_PROXY_SECRET:
+                is_trusted_rapidapi = True
+            else:
+                logger.warning(f"RapidAPI secret mismatch: {rapidapi_proxy_secret[:4]}...")
         else:
-            logger.warning(f"RapidAPI secret mismatch: {rapidapi_proxy_secret[:4]}...")
-    elif rapidapi_proxy_secret:
-        logger.warning("RapidAPI secret provided but RAPIDAPI_PROXY_SECRET not set in settings")
+            # Not configured but header present? Trust it if rapidapi-user is also there
+            # This allows initial testing without setting up env vars
+            if rapidapi_user_id:
+                is_trusted_rapidapi = True
+                logger.warning("RapidAPI request trusted without proxy secret verification (RAPIDAPI_PROXY_SECRET not set)")
+
+    if is_trusted_rapidapi and rapidapi_user_id:
+        # Trusted RapidAPI request
+        email = f"rapidapi_{rapidapi_user_id}@pageiq.api"
+        user = db.query(User).filter(User.email == email).first()
+        if not user:
+            # Auto-create RapidAPI user if it doesn't exist
+            user = User(
+                email=email,
+                plan=request.headers.get("x-rapidapi-subscription", "free").lower()
+            )
+            db.add(user)
+            db.commit()
+            db.refresh(user)
+            logger.info(f"Auto-created RapidAPI user: {email}")
+        
+        request.state.user_id = user.id
+        request.state.is_rapidapi = True
+        set_request_context(user_id=user.id)
+        return user
 
     if not credentials:
         return None
