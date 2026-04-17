@@ -23,10 +23,8 @@ class Settings(BaseSettings):
 
     # CORS
     BACKEND_CORS_ORIGINS: List[str] = [
-        "https://pageiq.pompora.dev",
-        "https://www.pageiq.com",
-        "http://localhost:3000",  # React dev server
-        "http://localhost:8080",  # Vue dev server
+        "http://localhost:3000",
+        "http://localhost:8080",
     ]
 
     @field_validator("BACKEND_CORS_ORIGINS", mode="before")
