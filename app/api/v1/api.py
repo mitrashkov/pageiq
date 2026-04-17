@@ -1,10 +1,11 @@
 from fastapi import APIRouter
 
-from app.api.v1.endpoints import analyze, analytics, batch, health, extract, seo, billing
+from app.api.v1.endpoints import analyze, analytics, batch, health, extract, seo, billing, docs
 
 api_router = APIRouter()
 
 # Include endpoints
+api_router.include_router(docs.router, prefix="/docs", tags=["docs"])
 api_router.include_router(health.router, tags=["health"])
 api_router.include_router(analyze.router, prefix="/analyze", tags=["analysis"])
 api_router.include_router(batch.router, prefix="/batch-analyze", tags=["batch"])
