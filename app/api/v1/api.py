@@ -12,3 +12,9 @@ api_router.include_router(analytics.router, prefix="/analytics", tags=["analytic
 api_router.include_router(extract.router, prefix="/extract", tags=["extraction"])
 api_router.include_router(seo.router, prefix="/seo", tags=["seo"])
 api_router.include_router(billing.router, prefix="/account", tags=["billing"])
+
+# Add direct /ping endpoint for compatibility with monitoring tools
+@api_router.get("/ping", tags=["health"], include_in_schema=False)
+async def ping_direct():
+    """Simple ping for monitoring (aliased for compatibility)"""
+    return {"status": "ok", "message": "pong"}

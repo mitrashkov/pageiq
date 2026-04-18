@@ -4,6 +4,7 @@ from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.exceptions import RequestValidationError
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
+import asyncio
 
 from app.api.v1.api import api_router
 from app.core.config import settings
@@ -35,6 +36,23 @@ app = FastAPI(
     docs_url=None,  # Disable automatic docs (we provide custom at /docs)
     redoc_url=None,  # Disable automatic redoc
 )
+
+@app.on_event("startup")
+async def startup_event():
+    """Run on startup"""
+    # Pre-initialize browser service to avoid latency on first request
+    from app.services.browser import browser_service
+    try:
+        # Don't block startup, but start initialization
+        asyncio.create_task(browser_service.initialize())
+    except Exception as e:
+        print(f"Error pre-initializing browser: {e}")
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """Run on shutdown"""
+    from app.services.browser import browser_service
+    await browser_service.cleanup()
 
 # Add exception handlers (requires app instance)
 from app.core.errors import (

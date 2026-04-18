@@ -203,6 +203,8 @@ def validate_options_input(options: Dict[str, Any]) -> Dict[str, Any]:
         'wait_for_network_idle': bool,
         'full_page_screenshot': bool,
         'timeout': int,
+        'deep_search': bool,
+        'pages_limit': int,
     }
 
     validated = {}

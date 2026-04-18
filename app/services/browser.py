@@ -22,10 +22,17 @@ def playwright_available() -> bool:
 class BrowserService:
     """Service for headless browser automation using Playwright."""
 
+    _instance = None
+    _lock = asyncio.Lock()
+    # Global limit of concurrent browser pages. 
+    # Render Free Plan (512MB) is extremely tight, so we use 2.
+    _semaphore = asyncio.Semaphore(2) 
+
     def __init__(self):
         self.playwright = None
         self.browser: Optional[Browser] = None
         self.context: Optional[BrowserContext] = None
+        self._initialized = False
         
         # Force PLAYWRIGHT_BROWSERS_PATH for Render/Local
         # Using .playwright in the project root as it's the most common convention
@@ -43,14 +50,24 @@ class BrowserService:
             logger.warning(f"Browser path DOES NOT EXIST: {os.environ['PLAYWRIGHT_BROWSERS_PATH']}")
 
     async def __aenter__(self):
-        await self.initialize()
+        # We don't initialize here anymore as it's a long-lived service
+        # Instead, we just ensure it is initialized when needed
+        if not self._initialized:
+            async with self._lock:
+                if not self._initialized:
+                    await self.initialize()
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
-        await self.cleanup()
+        # We DO NOT cleanup here anymore, we want the browser to stay alive
+        # for subsequent requests to save memory and CPU.
+        pass
 
     async def initialize(self):
         """Initialize Playwright browser."""
+        if self._initialized:
+            return
+            
         try:
             if async_playwright is None:
                 raise RuntimeError(
@@ -59,14 +76,14 @@ class BrowserService:
                 )
             
             # Log current environment for debugging
-            logger.info(f"Initializing browser. PLAYWRIGHT_BROWSERS_PATH={os.environ.get('PLAYWRIGHT_BROWSERS_PATH', 'Not Set')}")
+            logger.info(f"Initializing long-lived browser service. PLAYWRIGHT_BROWSERS_PATH={os.environ.get('PLAYWRIGHT_BROWSERS_PATH', 'Not Set')}")
             logger.info(f"HOME={os.environ.get('HOME', 'Not Set')}")
 
             started = async_playwright().start()
             # Tests patch `async_playwright` with a MagicMock; support both async and sync.
             self.playwright = await started if inspect.isawaitable(started) else started
 
-            # Launch browser with anti-detection measures
+            # Launch browser with extreme memory-saving measures for Render Free Plan
             args = [
                 '--no-sandbox',
                 '--disable-setuid-sandbox',
@@ -77,6 +94,11 @@ class BrowserService:
                 '--disable-gpu',
                 '--disable-web-security',
                 '--disable-features=VizDisplayCompositor',
+                '--js-flags="--max-old-space-size=128"', # Limit V8 memory
+                '--disable-extensions',
+                '--disable-component-update',
+                '--disable-default-apps',
+                '--mute-audio',
             ]
 
             # `--single-process` is not supported on Windows Chromium.
@@ -87,9 +109,10 @@ class BrowserService:
             self.browser = await launched if inspect.isawaitable(launched) else launched
 
             # Create context with realistic settings
+            # We use a single context and rotate pages within it
             ctx = self.browser.new_context(
                 user_agent=self._get_random_user_agent(),
-                viewport={'width': 1920, 'height': 1080},
+                viewport={'width': 1280, 'height': 800}, # Smaller viewport to save memory
                 locale='en-US',
                 timezone_id='America/New_York',
                 geolocation=None,
@@ -113,22 +136,27 @@ class BrowserService:
                 });
             """)
 
-            logger.info("Browser service initialized successfully")
+            self._initialized = True
+            logger.info("Browser service initialized successfully (long-lived)")
 
         except Exception as e:
             logger.error(f"Failed to initialize browser: {str(e)}")
             raise
 
     async def cleanup(self):
-        """Clean up browser resources."""
+        """Clean up browser resources (should be called on app shutdown)."""
         try:
             if self.context:
                 await self.context.close()
+                self.context = None
             if self.browser:
                 await self.browser.close()
+                self.browser = None
             if self.playwright:
                 await self.playwright.stop()
-            logger.info("Browser service cleaned up")
+                self.playwright = None
+            self._initialized = False
+            logger.info("Browser service cleaned up completely")
         except Exception as e:
             logger.error(f"Error during cleanup: {str(e)}")
 
@@ -149,62 +177,69 @@ class BrowserService:
         Returns:
             Tuple of (html_content, error_message, metadata)
         """
-        if not self.context:
-            await self.initialize()
+        if not self._initialized:
+            async with self._lock:
+                if not self._initialized:
+                    await self.initialize()
 
-        try:
-            page = await self.context.new_page()
-
-            # Set extra HTTP headers
-            await page.set_extra_http_headers({
-                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-                'Accept-Language': 'en-US,en;q=0.5',
-                'Accept-Encoding': 'gzip, deflate',
-                'DNT': '1',
-                'Connection': 'keep-alive',
-                'Upgrade-Insecure-Requests': '1',
-            })
-
-            # Navigate to page
-            response = await page.goto(url, wait_until='domcontentloaded', timeout=timeout)
-
-            if not response:
-                await page.close()
-                return None, f"No response from {url}", {}
-
-            if not response.ok:
-                await page.close()
-                return None, f"HTTP {response.status}: {response.status_text}", {}
-
-            # Wait for network idle if requested
-            if wait_for_network_idle:
-                await page.wait_for_load_state('networkidle', timeout=timeout)
-
-            # Get final HTML content
-            html_content = await page.content()
-
-            # Get page metadata
+        async with self._semaphore:
+            page = None
             try:
-                response_headers = dict(getattr(response, "headers", {}) or {})
-            except Exception:
-                response_headers = {}
-            metadata = {
-                'url': page.url,
-                'title': await page.title(),
-                'status_code': response.status,
-                'content_type': response_headers.get('content-type', ''),
-                'headers': response_headers,
-            }
+                page = await self.context.new_page()
 
-            await page.close()
+                # Set extra HTTP headers
+                await page.set_extra_http_headers({
+                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+                    'Accept-Language': 'en-US,en;q=0.5',
+                    'Accept-Encoding': 'gzip, deflate',
+                    'DNT': '1',
+                    'Connection': 'keep-alive',
+                    'Upgrade-Insecure-Requests': '1',
+                })
 
-            logger.info(f"Successfully fetched {len(html_content)} characters from {url} using browser")
-            return html_content, None, metadata
+                # Navigate to page
+                # Use 'domcontentloaded' for speed, then 'networkidle' if requested
+                response = await page.goto(url, wait_until='domcontentloaded', timeout=timeout)
 
-        except Exception as e:
-            error_msg = f"Browser fetch failed for {url}: {str(e)}"
-            logger.error(error_msg)
-            return None, error_msg, {}
+                if not response:
+                    return None, f"No response from {url}", {}
+
+                if not response.ok:
+                    return None, f"HTTP {response.status}: {response.status_text}", {}
+
+                # Wait for network idle if requested
+                if wait_for_network_idle:
+                    try:
+                        await page.wait_for_load_state('networkidle', timeout=min(timeout, 10000)) # Cap network idle wait
+                    except Exception:
+                        logger.warning(f"Timeout waiting for networkidle on {url}, continuing with current content")
+
+                # Get final HTML content
+                html_content = await page.content()
+
+                # Get page metadata
+                try:
+                    response_headers = dict(getattr(response, "headers", {}) or {})
+                except Exception:
+                    response_headers = {}
+                metadata = {
+                    'url': page.url,
+                    'title': await page.title(),
+                    'status_code': response.status,
+                    'content_type': response_headers.get('content-type', ''),
+                    'headers': response_headers,
+                }
+
+                logger.info(f"Successfully fetched {len(html_content)} characters from {url} using browser")
+                return html_content, None, metadata
+
+            except Exception as e:
+                error_msg = f"Browser fetch failed for {url}: {str(e)}"
+                logger.error(error_msg)
+                return None, error_msg, {}
+            finally:
+                if page:
+                    await page.close()
 
     async def take_screenshot(
         self,
@@ -223,28 +258,36 @@ class BrowserService:
         Returns:
             Tuple of (screenshot_bytes, error_message)
         """
-        if not self.context:
-            await self.initialize()
+        if not self._initialized:
+            async with self._lock:
+                if not self._initialized:
+                    await self.initialize()
 
-        try:
-            page = await self.context.new_page()
+        async with self._semaphore:
+            page = None
+            try:
+                page = await self.context.new_page()
 
-            # Navigate to page
-            await page.goto(url, wait_until='domcontentloaded', timeout=timeout)
-            await page.wait_for_load_state('networkidle', timeout=timeout)
+                # Navigate to page
+                await page.goto(url, wait_until='domcontentloaded', timeout=timeout)
+                try:
+                    await page.wait_for_load_state('networkidle', timeout=min(timeout, 10000))
+                except Exception:
+                    pass
 
-            # Take screenshot
-            screenshot = await page.screenshot(full_page=full_page)
+                # Take screenshot
+                screenshot = await page.screenshot(full_page=full_page)
 
-            await page.close()
+                logger.info(f"Screenshot taken for {url}")
+                return screenshot, None
 
-            logger.info(f"Screenshot taken for {url}")
-            return screenshot, None
-
-        except Exception as e:
-            error_msg = f"Screenshot failed for {url}: {str(e)}"
-            logger.error(error_msg)
-            return None, error_msg
+            except Exception as e:
+                error_msg = f"Screenshot failed for {url}: {str(e)}"
+                logger.error(error_msg)
+                return None, error_msg
+            finally:
+                if page:
+                    await page.close()
 
     def _get_random_user_agent(self) -> str:
         """Get a random realistic user agent string."""

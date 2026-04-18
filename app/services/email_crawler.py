@@ -28,6 +28,21 @@ class EmailCrawler:
         Crawl a website starting from start_url and extract emails from all visited pages.
         Supports high-volume crawling (500+ pages) with concurrency.
         """
+        # Set a hard timeout for the entire crawl to avoid RapidAPI/Gateway timeouts
+        # 150 seconds gives some buffer before the 180s RapidAPI limit
+        CRAWL_TIMEOUT = 150
+        
+        try:
+            return await asyncio.wait_for(
+                self._crawl_internal(start_url, max_pages, use_browser),
+                timeout=CRAWL_TIMEOUT
+            )
+        except asyncio.TimeoutError:
+            logger.warning(f"Crawl timeout reached for {start_url} after {CRAWL_TIMEOUT}s. Returning partial results.")
+            return sorted(list(self.emails))
+
+    async def _crawl_internal(self, start_url: str, max_pages: Optional[int] = None, use_browser: bool = False) -> List[str]:
+        """Internal crawl logic"""
         if max_pages:
             self.max_pages = max_pages
 
