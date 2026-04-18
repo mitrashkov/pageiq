@@ -5,7 +5,7 @@ from app.api.v1.endpoints import analyze, analytics, batch, health, extract, seo
 api_router = APIRouter()
 
 # Include endpoints
-api_router.include_router(health.router, tags=["health"])
+api_router.include_router(health.router, prefix="/health", tags=["health"])
 api_router.include_router(analyze.router, prefix="/analyze", tags=["analysis"])
 api_router.include_router(batch.router, prefix="/batch-analyze", tags=["batch"])
 api_router.include_router(analytics.router, prefix="/analytics", tags=["analytics"])

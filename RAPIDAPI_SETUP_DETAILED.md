@@ -1,46 +1,30 @@
-# 🚀 PageIQ RapidAPI: The Ultimate Configuration Guide (Every Step)
+# 🚀 PageIQ RapidAPI: The ULTIMATE Visual Guide (Step-by-Step)
 
-This is the **COMPLETE** guide for your RapidAPI dashboard. Do not skip any field. Follow this exactly to get a 5-star developer experience.
-
----
-
-## 🟢 1. General Settings (Definition -> General)
-
-- **Name:** `PageIQ - Website Intelligence & Extraction`
-- **Description:** `Turn any URL into structured business data. Extract tech stack, professional emails, metadata, SEO audits, and social links with enterprise-grade reliability.`
-- **Category:** `Data` or `Tools`
-- **Image:** Upload your logo here.
-- **Website:** `https://pageiq.pompora.dev`
+Follow this guide EXACTLY. I have mapped every field to the RapidAPI dashboard.
 
 ---
 
-## 🟡 2. Base URL (Definition -> Security)
+## � STEP 1: Security (Definition -> Security)
 
 - **Base URL:** `https://pageiq.pompora.dev/api/v1`
-- **Proxy Secret:** Leave this for now if you haven't set it in Render, but eventually, copy the secret from this page and add `RAPIDAPI_PROXY_SECRET=your_secret` to Render.
+- **Proxy Secret:** (Copy this secret and add `RAPIDAPI_PROXY_SECRET=your_secret` to Render environment variables later).
 
 ---
 
-## 🔴 3. ENDPOINTS SETUP (The "Messy" Part)
+## 🔴 STEP 2: ENDPOINTS (The "Fields" to Fill)
 
-For **EVERY** endpoint below, follow these sub-steps in the **Endpoints** tab:
+For each endpoint below, click **"Add Endpoint"** in the **Endpoints** tab and fill the fields as shown:
 
-### 🔹 Endpoint 1: Analyze Website
-- **Name:** `Analyze Website`
+### 🔹 1. Analyze Website
 - **Method:** `POST`
 - **Path:** `/analyze`
-- **Description:** `Deep analysis of any URL. Returns tech stack, emails, social links, and business metadata.`
-- **HEADERS (IMPORTANT):**
-    - Click **Add Header**
-    - Name: `Content-Type`
-    - Default Value: `application/json`
-- **BODY (The "JSON" Option):**
-    - Scroll to **Request Body**.
-    - **This is where you choose JSON.**
-    - Click **Add Payload**.
-    - Set Name to `body`.
-    - Set Description to `Analysis options`.
-    - **IMPORTANT:** Paste this into the **Example Value**:
+- **Name:** `Analyze Website`
+- **Description:** `Deep intelligence extraction: tech stack, emails, social links, and business metadata.`
+- **Headers:** Add `Content-Type` with value `application/json`.
+- **Body (Request Body Tab):**
+    - **Media Type:** `application/json`
+    - **Payload Name:** `body`
+    - **Example Value:**
       ```json
       {
         "url": "https://example.com",
@@ -51,72 +35,92 @@ For **EVERY** endpoint below, follow these sub-steps in the **Endpoints** tab:
       }
       ```
 
-### 🔹 Endpoint 2: Extract Emails
-- **Name:** `Extract Emails`
+### 🔹 2. Extract Emails
 - **Method:** `POST`
 - **Path:** `/extract/emails`
-- **Description:** `Scans a webpage specifically for professional email addresses.`
-- **HEADERS:** `Content-Type: application/json`
-- **BODY:**
-    - Click **Add Payload**.
-    - Example Value:
+- **Name:** `Extract Emails`
+- **Description:** `Targeted scraper for professional email addresses found on any page.`
+- **Headers:** Add `Content-Type` with value `application/json`.
+- **Body:**
+    - **Payload Name:** `body`
+    - **Example Value:**
       ```json
       {
         "url": "https://example.com/contact"
       }
       ```
 
-### 🔹 Endpoint 3: SEO Audit
-- **Name:** `SEO Audit`
+### 🔹 3. SEO Audit
 - **Method:** `POST`
 - **Path:** `/seo/seo-audit`
-- **Description:** `Technical SEO check for titles, meta tags, and mobile readiness.`
-- **HEADERS:** `Content-Type: application/json`
-- **BODY:**
-    - Example Value:
+- **Name:** `SEO Audit`
+- **Description:** `Complete technical SEO report: titles, meta tags, mobile readiness, and structured data.`
+- **Headers:** Add `Content-Type` with value `application/json`.
+- **Body:**
+    - **Payload Name:** `body`
+    - **Example Value:**
       ```json
       {
         "url": "https://example.com"
       }
       ```
 
+### � 4. Broken Links Detector
+- **Method:** `POST`
+- **Path:** `/seo/broken-links`
+- **Name:** `Broken Links Detector`
+- **Description:** `Identify broken internal and external links on any webpage.`
+- **Headers:** Add `Content-Type` with value `application/json`.
+- **Body:**
+    - **Payload Name:** `body`
+    - **Example Value:**
+      ```json
+      {
+        "url": "https://example.com",
+        "check_external": true
+      }
+      ```
+
+### 🔹 5. Batch Analyze
+- **Method:** `POST`
+- **Path:** `/batch-analyze`
+- **Name:** `Batch Analyze`
+- **Description:** `Submit multiple URLs for asynchronous analysis. Returns a batch_id.`
+- **Headers:** Add `Content-Type` with value `application/json`.
+- **Body:**
+    - **Payload Name:** `body`
+    - **Example Value:**
+      ```json
+      {
+        "urls": ["https://site1.com", "https://site2.com"]
+      }
+      ```
+
+### 🔹 6. API Health Check
+- **Method:** `GET`
+- **Path:** `/health`
+- **Name:** `System Health`
+- **Description:** `Check API, Database, and Redis connectivity status.`
+- **Headers:** None needed.
+- **Body:** None needed.
+
 ---
 
-## 🔵 4. PARAMETERS & TYPES (The "10 More Things")
+## 🛠 Solving the "404 Not Found" Error
 
-When adding parameters (like in the Body payload):
-1. **Type:** Choose `String` for the URL.
-2. **Required:** Set to `Yes`.
-3. **Description:** `The target website URL (e.g. https://google.com)`
-
----
-
-## ⚪ 5. TRANSFORMATIONS (Optional but Pro)
-
-If you want to hide our headers from users:
-1. Go to **Transformations**.
-2. Add a transformation to **Strip Headers**.
-3. Strip `x-rapidapi-proxy-secret` and `Authorization`.
+If you get `message: "Endpoint does not exist"`:
+1. **Check Base URL:** It MUST be `https://pageiq.pompora.dev/api/v1`.
+2. **Leading Slashes:** Ensure your paths in RapidAPI start with `/` (e.g., `/analyze`).
+3. **Wait for Deploy:** I am pushing the fixes NOW. Render takes 1 minute to update.
 
 ---
 
-## 🛠 Troubleshooting Render "502/Network Error"
+## 🚀 PUSHING TO GITHUB...
 
-If you see "Failed to fetch":
-1. **Wait 2 minutes:** Render's free tier sleeps. The first request takes 60 seconds to "wake up".
-2. **CORS:** I have already set `allow_origins=["*"]` in the code. This is the #1 fix for "Failed to fetch".
-3. **Redis:** I have fixed the Redis crash. Your app will now start even if Redis is missing.
-4. **Logs:** Go to Render Dashboard -> Logs. If you see "Exited with status 1", look at the error. If you see "Uvicorn running on http://0.0.0.0:10000", it's working!
-
----
-
-## 🚀 FINAL COMMANDS TO DEPLOY
-
-Run these in your terminal now:
+Run these commands in your terminal to sync with Render:
 ```bash
 git add .
-git commit -m "Final production fixes: optional redis, relaxed rapidapi auth, and ultimate docs"
+git commit -m "Fix 404 routing, SQLAlchemy 2.0 health check, and enhanced visual guide"
 git push origin main
 ```
-Render will automatically see this and deploy. Your API will be live at:
-`https://pageiq.pompora.dev/api/v1`
+Render will auto-deploy. Check `https://pageiq.pompora.dev/api/v1/health` in 1 minute.
