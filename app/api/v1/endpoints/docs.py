@@ -95,7 +95,7 @@ MODERN_DOCS_HTML = """
         section { margin-bottom: 5rem; scroll-margin-top: 4rem; }
         h1 { font-size: 2.75rem; font-weight: 800; margin-bottom: 1.5rem; letter-spacing: -0.02em; color: #0f172a; }
         h2 { font-size: 1.75rem; font-weight: 700; margin-bottom: 1.25rem; margin-top: 3rem; color: #0f172a; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
-        h3 { font-size: 1.25rem; font-weight: 700; margin-top: 2.5rem; margin-bottom: 1rem; color: #334155; }
+        h3 { font-size: 1.25rem; font-weight: 700; margin-top: 2rem; margin-bottom: 1rem; color: #334155; }
         p { margin-bottom: 1.25rem; color: #475569; font-size: 1.05rem; }
 
         /* Method Badges */
@@ -237,4 +237,4 @@ Content-Type: application/json</code></pre>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
 </body>
 </html>
-\"""
+"""
