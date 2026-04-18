@@ -787,6 +787,7 @@ def render_docs_html():
     return "".join(html)
 
 @router.get("/", response_class=HTMLResponse)
+@router.get("/docs", response_class=HTMLResponse)
 async def get_docs():
     """Serve the modern, comprehensive documentation page"""
     return HTMLResponse(content=MODERN_DOCS_HTML)
