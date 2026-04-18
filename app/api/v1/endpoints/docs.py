@@ -734,11 +734,11 @@ import importlib
 from fastapi.routing import APIRoute
 from fastapi.encoders import jsonable_encoder
 from fastapi.openapi.utils import get_openapi
-from app.api.v1.endpoints import analyze, batch, extract, seo, billing, health, analytics
+from app.api.v1.endpoints import analyze, extract, seo, billing, health, analytics
 
 def generate_endpoint_docs():
     # Collect all routers
-    routers = [analyze.router, batch.router, extract.router, seo.router, billing.router, health.router, analytics.router]
+    routers = [analyze.router, extract.router, seo.router, billing.router, health.router, analytics.router]
     endpoint_docs = []
     for router in routers:
         for route in router.routes:
@@ -786,12 +786,235 @@ def render_docs_html():
     html.append("</div></body></html>")
     return "".join(html)
 
-@router.get("/docs", response_class=HTMLResponse)
+@router.get("/", response_class=HTMLResponse)
 async def get_docs():
-    """Serve the auto-generated documentation page"""
-    return HTMLResponse(content=render_docs_html())
+    """Serve the modern, comprehensive documentation page"""
+    return HTMLResponse(content=MODERN_DOCS_HTML)
 
 @router.get("/tests", response_class=HTMLResponse)
 async def get_tests():
     """Serve the interactive testing page"""
     return TEST_PAGE_HTML
+
+
+MODERN_DOCS_HTML = """
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PageIQ API Documentation | Developer Portal</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --bg: #f8fafc;
+            --sidebar-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --code-bg: #1e293b;
+            --border: #e2e8f0;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text-main); line-height: 1.6; }
+
+        .layout { display: flex; min-height: 100vh; }
+
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
+            background: var(--sidebar-bg);
+            border-right: 1px solid var(--border);
+            padding: 2rem;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        .logo { font-size: 1.5rem; font-weight: 800; color: var(--primary); margin-bottom: 2rem; display: flex; align-items: center; gap: 0.5rem; }
+        .nav-group { margin-bottom: 2rem; }
+        .nav-title { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.05em; margin-bottom: 0.75rem; }
+        .nav-link { display: block; padding: 0.5rem 0; color: var(--text-main); text-decoration: none; font-size: 0.9rem; transition: color 0.2s; }
+        .nav-link:hover { color: var(--primary); }
+
+        /* Content */
+        .content { flex: 1; padding: 3rem 4rem; max-width: 1000px; }
+        section { margin-bottom: 4rem; scroll-margin-top: 2rem; }
+        h1 { font-size: 2.5rem; font-weight: 800; margin-bottom: 1.5rem; letter-spacing: -0.02em; }
+        h2 { font-size: 1.75rem; font-weight: 700; margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
+        h3 { font-size: 1.25rem; font-weight: 600; margin-top: 2rem; margin-bottom: 0.75rem; }
+        p { margin-bottom: 1.25rem; color: #475569; }
+
+        /* Badges */
+        .method { font-size: 0.75rem; font-weight: 700; padding: 0.25rem 0.5rem; border-radius: 0.375rem; margin-right: 0.5rem; color: white; }
+        .post { background: #2563eb; }
+        .get { background: #059669; }
+
+        /* Code Blocks */
+        pre[class*="language-"] { border-radius: 0.75rem; margin: 1.5rem 0; font-size: 0.9rem; }
+        
+        .endpoint-card {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 1rem;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05);
+        }
+
+        .endpoint-header { display: flex; align-items: center; margin-bottom: 1rem; font-family: monospace; font-size: 1.1rem; }
+        
+        table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; font-size: 0.9rem; }
+        th { text-align: left; padding: 0.75rem; border-bottom: 2px solid var(--border); color: var(--text-muted); }
+        td { padding: 0.75rem; border-bottom: 1px solid var(--border); }
+
+        .tag { font-size: 0.7rem; background: #f1f5f9; padding: 0.2rem 0.5rem; border-radius: 1rem; color: var(--text-muted); }
+
+        @media (max-width: 768px) {
+            .layout { flex-direction: column; }
+            .sidebar { width: 100%; height: auto; position: static; }
+            .content { padding: 2rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="layout">
+        <aside class="sidebar">
+            <div class="logo"><span>🚀</span> PageIQ</div>
+            
+            <nav class="nav-group">
+                <div class="nav-title">Getting Started</div>
+                <a href="#introduction" class="nav-link">Introduction</a>
+                <a href="#authentication" class="nav-link">Authentication</a>
+                <a href="#errors" class="nav-link">Error Handling</a>
+            </nav>
+
+            <nav class="nav-group">
+                <div class="nav-title">Endpoints</div>
+                <a href="#analyze" class="nav-link">Website Analysis</a>
+                <a href="#extract" class="nav-link">Data Extraction</a>
+                <a href="#seo" class="nav-link">SEO Audit</a>
+                <a href="#health" class="nav-link">System Health</a>
+            </nav>
+
+            <nav class="nav-group">
+                <div class="nav-title">Tools</div>
+                <a href="/tests" class="nav-link">Interactive Tester ↗</a>
+            </nav>
+        </aside>
+
+        <main class="content">
+            <section id="introduction">
+                <h1>API Documentation</h1>
+                <p>PageIQ is a powerful website intelligence engine that transforms any URL into structured, actionable business data. Built for developers, our API provides comprehensive tools for metadata extraction, contact discovery, SEO auditing, and technology stack detection.</p>
+                <div class="endpoint-card" style="background: #eef2ff; border-color: #c7d2fe;">
+                    <h3 style="margin-top:0">Key Features</h3>
+                    <ul style="margin-left: 1.5rem; color: #4338ca;">
+                        <li>Headless Browser Rendering (Playwright)</li>
+                        <li>Advanced Anti-Bot Evasion</li>
+                        <li>Deep Email & Contact Crawling</li>
+                        <li>Detailed SEO Performance Auditing</li>
+                        <li>Technology & CMS Detection</li>
+                    </ul>
+                </div>
+            </section>
+
+            <section id="authentication">
+                <h2>Authentication</h2>
+                <p>Authenticate your requests by including your API Key in the <code>X-API-Key</code> header.</p>
+                <pre><code class="language-http">GET /api/v1/analyze HTTP/1.1
+Host: pageiq.pompora.dev
+X-API-Key: your_api_key_here</code></pre>
+            </section>
+
+            <section id="analyze">
+                <h2>Website Analysis</h2>
+                <p>The core analysis engine that extracts metadata, social profiles, and technical details.</p>
+                
+                <div class="endpoint-card">
+                    <div class="endpoint-header">
+                        <span class="method post">POST</span> /api/v1/analyze
+                    </div>
+                    <p>Perform a comprehensive analysis of a single URL.</p>
+                    
+                    <h3>Parameters</h3>
+                    <table>
+                        <thead>
+                            <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>url</td><td>string</td><td>The target website URL (required).</td></tr>
+                            <tr><td>use_browser</td><td>boolean</td><td>Enable JS rendering for SPA/React apps. <span class="tag">PRO+</span></td></tr>
+                            <tr><td>screenshot</td><td>boolean</td><td>Capture a full-page screenshot.</td></tr>
+                        </tbody>
+                    </table>
+
+                    <h3>Example Request</h3>
+                    <pre><code class="language-json">{
+  "url": "https://mikso.net",
+  "use_browser": true,
+  "screenshot": true
+}</code></pre>
+                </div>
+            </section>
+
+            <section id="extract">
+                <h2>Data Extraction</h2>
+                <p>Specialized endpoints for deep data discovery.</p>
+                
+                <div class="endpoint-card">
+                    <div class="endpoint-header">
+                        <span class="method post">POST</span> /api/v1/extract/emails
+                    </div>
+                    <p>Discover email addresses. Supports deep crawling of internal pages.</p>
+                    
+                    <h3>Options</h3>
+                    <table>
+                        <thead>
+                            <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>deep_search</td><td>boolean</td><td>Crawl internal pages for more emails. <span class="tag">PRO+</span></td></tr>
+                            <tr><td>pages_limit</td><td>integer</td><td>Max pages to crawl (up to 500). <span class="tag">MEGA</span></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section id="seo">
+                <h2>SEO Audit</h2>
+                <p>Get professional SEO insights and scores for any webpage.</p>
+                
+                <div class="endpoint-card">
+                    <div class="endpoint-header">
+                        <span class="method post">POST</span> /api/v1/seo/seo-audit
+                    </div>
+                    <p>Returns a weighted SEO score (1-100) and detailed improvement advice.</p>
+                </div>
+            </section>
+
+            <section id="health">
+                <h2>System Health</h2>
+                <div class="endpoint-card">
+                    <div class="endpoint-header">
+                        <span class="method get">GET</span> /api/v1/ping
+                    </div>
+                    <p>Returns <code>{"status": "ok"}</code> if the service is operational.</p>
+                </div>
+            </section>
+
+            <footer style="margin-top: 8rem; padding-top: 2rem; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 0.8rem;">
+                &copy; 2026 PageIQ Intelligence Engine. All rights reserved.
+            </footer>
+        </main>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-http.min.js"></script>
+</body>
+</html>
+\"""

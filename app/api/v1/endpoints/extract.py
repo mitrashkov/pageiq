@@ -64,11 +64,11 @@ async def extract_emails_endpoint(
     use_browser = bool(options.get("use_browser", False))
     pages_limit = min(int(options.get("pages_limit", 10)), 20)  # Cap at 20 pages for performance
     
-    # Plan check: Deep search is only for Basic, Pro, Ultra, and Mega plans (Temporarily enabled for BASIC)
+    # Plan check: Deep search is only for PRO, ULTRA, and MEGA plans
     if deep_search:
         user_plan = getattr(user, "plan", "free").lower()
-        # BASIC added to allowed plans for testing
-        premium_plans = ["basic", "pro", "ultra", "mega"]
+        # Deep search restricted to Pro, Ultra, and Mega
+        premium_plans = ["pro", "ultra", "mega"]
         
         if user_plan not in premium_plans:
             raise HTTPException(
@@ -86,16 +86,14 @@ async def extract_emails_endpoint(
         elif user_plan == "pro":
             # PRO: 50/Month quota, deep crawl up to 50 pages
             pages_limit = min(int(options.get("pages_limit", 20)), 50)
-        else: # BASIC (Testing)
-            pages_limit = min(int(options.get("pages_limit", 10)), 20)
 
-    # JS Rendering check (Temporarily enabled for BASIC)
+    # JS Rendering check: Only for PRO, ULTRA, and MEGA
     if use_browser:
         user_plan = getattr(user, "plan", "free").lower()
-        if user_plan not in ["basic", "pro", "ultra", "mega"]:
+        if user_plan not in ["pro", "ultra", "mega"]:
             raise HTTPException(
                 status_code=403,
-                detail=f"JavaScript Rendering (use_browser) is an ULTRA/MEGA feature. Current plan: {user_plan.upper()}"
+                detail=f"JavaScript Rendering (use_browser) is a PRO/ULTRA/MEGA feature. Current plan: {user_plan.upper()}"
             )
 
     try:
