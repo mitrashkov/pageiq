@@ -11,8 +11,8 @@ Authorization: Bearer your-api-key-here
 
 ## Rate Limits
 - Free tier: 100 requests/month
-- Basic: 5,000 requests/month
-- Pro: 50,000 requests/month
+- Basic: 10,000 requests/month
+- Pro: 200,000 requests/month
 - Business: 500,000 requests/month
 
 ## Endpoints

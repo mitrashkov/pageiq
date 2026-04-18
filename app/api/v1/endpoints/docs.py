@@ -2,7 +2,7 @@
 Web-based documentation and comprehensive interactive test suite for PageIQ API.
 Accessible at /docs for documentation and /tests for manual testing all endpoints.
 """
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse
 
 router = APIRouter()
@@ -25,6 +25,7 @@ LANDING_PAGE_HTML = """
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PageIQ - Website Intelligence API</title>
+    <meta name="description" content="Turn any website into actionable business data. Extract SEO score, tech stack, metadata, verified emails, socials, and hidden website intelligence from any URL.">
     <style>
         :root {
             --bg: #0b1020;
@@ -61,32 +62,44 @@ LANDING_PAGE_HTML = """
     <div class="wrap">
         <div class="nav">
             <div class="brand">PageIQ</div>
-            <a class="cta" href="/docs">Open Docs</a>
+            <a class="cta" href="/docs">API Docs</a>
         </div>
         <section class="hero">
-            <h1>Website Intelligence API for Real-World Automation</h1>
-            <p>PageIQ turns any URL into structured business data: metadata, emails, schema, Open Graph tags, SEO diagnostics, and technology insights in one request.</p>
+            <h1>Turn Any Website Into Actionable Business Data</h1>
+            <p>Extract SEO score, tech stack, metadata, verified emails, socials, and hidden business intelligence from any URL.</p>
             <div class="buttons">
-                <a class="btn btn-primary" href="/docs">Read API Docs</a>
+                <a class="btn btn-primary" href="https://rapidapi.com" target="_blank" rel="noopener noreferrer">Try on RapidAPI</a>
                 <a class="btn btn-secondary" href="/api/v1/health">Health Check</a>
             </div>
         </section>
+        <section>
+            <h2 style="font-size:1.4rem; margin-bottom:0.8rem;">Use Cases</h2>
+            <p style="color:var(--muted); margin-bottom:0.8rem;">Explore focused API pages optimized for intent-based search traffic.</p>
+        </section>
         <section class="grid">
             <article class="card">
-                <h3>Analyze</h3>
-                <p>Get title, description, socials, contact data, language, country hints, schema, and more.</p>
+                <h3><a href="/seo-audit-api" style="color:inherit; text-decoration:none;">SEO Audit API</a></h3>
+                <p>Run website SEO scoring with actionable audit items for title, metadata, headings, mobile, and technical checks.</p>
             </article>
             <article class="card">
-                <h3>Extract</h3>
-                <p>Use dedicated endpoints for emails, schema.org, and metadata extraction.</p>
+                <h3><a href="/website-scraper-api" style="color:inherit; text-decoration:none;">Website Scraper API</a></h3>
+                <p>Scrape structured business intelligence from any URL with one API request.</p>
             </article>
             <article class="card">
-                <h3>SEO</h3>
-                <p>Run SEO audit checks and broken-link scanning for any public page.</p>
+                <h3><a href="/email-extractor-api" style="color:inherit; text-decoration:none;">Email Extractor API</a></h3>
+                <p>Find verified business emails from websites, with deep crawl support for premium plans.</p>
             </article>
             <article class="card">
-                <h3>Tech Detection</h3>
-                <p>Detect framework and platform signals plus web languages like HTML, CSS, and JavaScript.</p>
+                <h3><a href="/tech-stack-detector-api" style="color:inherit; text-decoration:none;">Tech Stack Detector API</a></h3>
+                <p>Detect frameworks, platforms, analytics tools, and website languages including HTML/CSS/JavaScript.</p>
+            </article>
+            <article class="card">
+                <h3><a href="/website-metadata-api" style="color:inherit; text-decoration:none;">Website Metadata API</a></h3>
+                <p>Extract title, description, schema.org, and Open Graph data for enrichment workflows.</p>
+            </article>
+            <article class="card">
+                <h3><a href="/competitor-website-analysis-api" style="color:inherit; text-decoration:none;">Competitor Website Analysis API</a></h3>
+                <p>Analyze competitors' websites for SEO, stack, metadata, and contact intelligence at scale.</p>
             </article>
         </section>
         <section class="api">
@@ -98,6 +111,174 @@ LANDING_PAGE_HTML = """
 </body>
 </html>
 """
+
+SEO_PAGE_STYLE = """
+<style>
+    :root {
+        --bg: #0b1020;
+        --panel: #111831;
+        --text: #e5e7eb;
+        --muted: #94a3b8;
+        --primary: #6366f1;
+        --primary-hover: #4f46e5;
+        --border: #233056;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; background: var(--bg); color: var(--text); }
+    .wrap { max-width: 1024px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+    .top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; gap: 0.8rem; flex-wrap: wrap; }
+    .brand { font-weight: 800; }
+    .link { color: #c7d2fe; text-decoration: none; }
+    h1 { font-size: clamp(1.8rem, 4vw, 3rem); line-height: 1.1; margin-bottom: 0.8rem; }
+    p { color: var(--muted); margin-bottom: 0.9rem; line-height: 1.6; }
+    .box { border: 1px solid var(--border); background: var(--panel); border-radius: 0.9rem; padding: 1rem; margin-top: 1rem; }
+    .buttons { display: flex; gap: 0.7rem; flex-wrap: wrap; margin-top: 1rem; }
+    .btn { text-decoration: none; border-radius: 0.6rem; padding: 0.65rem 1rem; font-weight: 600; }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-secondary { border: 1px solid var(--border); color: var(--text); }
+    ul { margin-left: 1.1rem; color: var(--muted); }
+    li { margin-bottom: 0.4rem; }
+</style>
+"""
+
+def build_seo_page_html(
+    title: str,
+    keyword_focus: str,
+    summary: str,
+    endpoint: str,
+    benefits: list[str]
+) -> str:
+    benefit_items = "".join(f"<li>{item}</li>" for item in benefits)
+    return f"""
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{title} | PageIQ</title>
+    <meta name="description" content="{summary}">
+    <meta name="keywords" content="{keyword_focus}, pageiq api, website intelligence api">
+    {SEO_PAGE_STYLE}
+</head>
+<body>
+    <div class="wrap">
+        <div class="top">
+            <div class="brand">PageIQ</div>
+            <div>
+                <a class="link" href="/">Home</a> |
+                <a class="link" href="/docs">Docs</a>
+            </div>
+        </div>
+        <h1>{title}</h1>
+        <p>{summary}</p>
+        <div class="box">
+            <p><strong>Main Endpoint:</strong> <code>{endpoint}</code></p>
+            <p><strong>SEO Target:</strong> {keyword_focus}</p>
+            <ul>{benefit_items}</ul>
+            <div class="buttons">
+                <a class="btn btn-primary" href="https://rapidapi.com" target="_blank" rel="noopener noreferrer">Try on RapidAPI</a>
+                <a class="btn btn-secondary" href="/docs">Read Full API Docs</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+"""
+
+SEO_ENTRY_PAGES = {
+    "/seo-audit-api": {
+        "title": "Website SEO Audit API",
+        "keyword_focus": "seo audit api",
+        "summary": "Audit any website URL for title, metadata, heading structure, Open Graph, schema markup, mobile readiness, and technical SEO signals.",
+        "endpoint": "POST /api/v1/seo/seo-audit",
+        "benefits": [
+            "Score pages from 0 to 100 with actionable recommendations.",
+            "Return structured audit checks for title, description, headings, and technical SEO.",
+            "Use in internal SEO dashboards, lead audits, and automated reports.",
+        ],
+    },
+    "/website-scraper-api": {
+        "title": "Website Scraper API",
+        "keyword_focus": "website scraper api",
+        "summary": "Scrape website business intelligence including metadata, contacts, technology stack, and structured data from a single endpoint.",
+        "endpoint": "POST /api/v1/analyze",
+        "benefits": [
+            "Turn raw websites into structured JSON for your apps and automations.",
+            "Extract metadata, social profiles, schema.org, and Open Graph values.",
+            "Designed for lead generation, enrichment, and competitive research.",
+        ],
+    },
+    "/email-extractor-api": {
+        "title": "Find Business Emails from Website API",
+        "keyword_focus": "email extractor api",
+        "summary": "Extract verified business emails from websites with optional deep crawling for multi-page discovery.",
+        "endpoint": "POST /api/v1/extract/emails",
+        "benefits": [
+            "Find contact emails from public website pages.",
+            "Use deep search for broader website crawling on premium plans.",
+            "Return deduplicated, normalized email lists.",
+        ],
+    },
+    "/tech-stack-detector-api": {
+        "title": "Website Technology Detection API",
+        "keyword_focus": "tech stack detector api",
+        "summary": "Detect frameworks, platforms, analytics tools, and website languages like HTML, CSS, and JavaScript from any URL.",
+        "endpoint": "POST /api/v1/analyze/tech",
+        "benefits": [
+            "Identify CMS and framework fingerprints from HTML, scripts, and headers.",
+            "Return explicit language signals for HTML/CSS/JavaScript.",
+            "Use for sales targeting, competitor intelligence, and prospect qualification.",
+        ],
+    },
+    "/website-metadata-api": {
+        "title": "Website Metadata Scraper API",
+        "keyword_focus": "website metadata api",
+        "summary": "Extract high-value metadata including title, description, schema.org entities, and Open Graph tags in one request.",
+        "endpoint": "POST /api/v1/extract/metadata",
+        "benefits": [
+            "Enrich CRMs, SEO tools, and catalogs with clean metadata.",
+            "Get both schema.org and OG tags for semantic + social context.",
+            "Run at scale with simple URL inputs.",
+        ],
+    },
+    "/competitor-website-analysis-api": {
+        "title": "Competitor Website Analysis API",
+        "keyword_focus": "competitor website analysis api",
+        "summary": "Analyze competitor websites for SEO, metadata, stack, and contact signals to benchmark and build strategic workflows.",
+        "endpoint": "POST /api/v1/analyze",
+        "benefits": [
+            "Use one endpoint for broad competitor intelligence.",
+            "Collect structured outputs for dashboards and alerting.",
+            "Support GTM teams with repeatable, URL-driven analysis.",
+        ],
+    },
+}
+
+
+@router.get("/seo-audit-api", response_class=HTMLResponse)
+@router.get("/website-scraper-api", response_class=HTMLResponse)
+@router.get("/email-extractor-api", response_class=HTMLResponse)
+@router.get("/tech-stack-detector-api", response_class=HTMLResponse)
+@router.get("/website-metadata-api", response_class=HTMLResponse)
+@router.get("/competitor-website-analysis-api", response_class=HTMLResponse)
+async def seo_entry_pages(request: Request):
+    request_path = request.url.path
+    if request_path.startswith("/api/v1/docs"):
+        request_path = request_path[len("/api/v1/docs"):] or "/"
+
+    page = SEO_ENTRY_PAGES.get(request_path)
+    if not page:
+        return HTMLResponse("Not found", status_code=404)
+    return HTMLResponse(
+        content=build_seo_page_html(
+            title=page["title"],
+            keyword_focus=page["keyword_focus"],
+            summary=page["summary"],
+            endpoint=page["endpoint"],
+            benefits=page["benefits"],
+        )
+    )
 
 MODERN_DOCS_HTML = """
 <!DOCTYPE html>
