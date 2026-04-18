@@ -13,13 +13,16 @@ echo "Installing dependencies..."
 # We don't run pip install here to speed up startup, as it's done in buildCommand
 # pip install --no-cache-dir -r requirements.txt
 
-# Ensure relative path for Playwright browsers (Render Free Plan fix)
-export PLAYWRIGHT_BROWSERS_PATH=./pw-browsers
+# Ensure absolute path for Playwright browsers (Render Free Plan fix)
+export PLAYWRIGHT_BROWSERS_PATH=/opt/render/project/src/pw-browsers
 
-# Browsers are installed during buildCommand to ./pw-browsers
+# Browsers are installed during buildCommand to /opt/render/project/src/pw-browsers
 echo "Checking Playwright browsers in $PLAYWRIGHT_BROWSERS_PATH..."
 if [ -d "$PLAYWRIGHT_BROWSERS_PATH" ]; then
-    ls -R "$PLAYWRIGHT_BROWSERS_PATH" | head -n 20
+    echo "Directory exists. Contents:"
+    ls -la "$PLAYWRIGHT_BROWSERS_PATH"
+    echo "Recursive search for chrome-headless-shell:"
+    find "$PLAYWRIGHT_BROWSERS_PATH" -name "chrome-headless-shell"
 else
     echo "ERROR: Browsers directory not found in $PLAYWRIGHT_BROWSERS_PATH"
 fi
