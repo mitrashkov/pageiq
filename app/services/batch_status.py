@@ -109,10 +109,12 @@ class BatchStatusStore:
         status.updated_at_ms = int(time.time() * 1000)
         self._save_status(status)
 
-    def get_results(self, batch_id: str, limit: int = 1000) -> List[Dict[str, Any]]:
-        raw_items = self.redis.lrange(self._results_key(batch_id), 0, max(0, int(limit) - 1))
-        # lpush stores newest first; reverse to chronological order for API.
-        raw_items = list(reversed(raw_items))
+    def get_results(self, batch_id: str, limit: int = 100, offset: int = 0) -> List[Dict[str, Any]]:
+        """Get paginated results for a batch."""
+        start = offset
+        end = offset + limit - 1
+        raw_items = self.redis.lrange(self._results_key(batch_id), start, end)
+        
         results: List[Dict[str, Any]] = []
         for raw in raw_items:
             try:

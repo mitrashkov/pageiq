@@ -92,20 +92,25 @@ async def batch_analyze_websites(
 @router.get("/{batch_id}")
 async def get_batch_status(
     batch_id: str,
+    page: int = 1,
+    page_size: int = 50,
     user: User = Depends(get_optional_user),
     db: Session = Depends(get_db)
 ):
     """
-    Get status of batch analysis job.
-
-    Note: This is a simplified implementation.
-    In production, you'd store batch status in database/cache.
+    Get status of batch analysis job with paginated results.
     """
     status = batch_status_store.get_status(batch_id)
     if not status:
         raise HTTPException(status_code=404, detail="Batch not found")
 
-    results = batch_status_store.get_results(batch_id, limit=1000) if status.status in {"completed", "failed"} else []
+    # Pagination for results
+    limit = min(page_size, 100)
+    offset = (page - 1) * limit
+    
+    results = []
+    if status.status in {"completed", "failed", "processing"}:
+        results = batch_status_store.get_results(batch_id, limit=limit, offset=offset)
 
     return APIResponse.success(
         data={
@@ -116,6 +121,8 @@ async def get_batch_status(
             "failed_count": status.failed_count,
             "total_count": status.total_count,
             "updated_at_ms": status.updated_at_ms,
+            "page": page,
+            "page_size": len(results),
             "results": results,
             "error": status.last_error,
         }

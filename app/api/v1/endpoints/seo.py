@@ -80,33 +80,45 @@ def check_title(soup, base_url: str) -> SEOAuditItem:
             check="Title",
             passed=False,
             score=0,
-            message="No title tag found",
+            message="No title tag found. Title is the most important on-page SEO element.",
             severity="error"
         )
-    elif len(title) < 10:
-        return SEOAuditItem(
-            check="Title",
-            passed=False,
-            score=50,
-            message=f"Title too short ({len(title)} chars, should be 10-60)",
-            severity="warning"
-        )
-    elif len(title) > 60:
-        return SEOAuditItem(
-            check="Title",
-            passed=False,
-            score=50,
-            message=f"Title too long ({len(title)} chars, should be 10-60)",
-            severity="warning"
-        )
+    
+    length = len(title)
+    # Optimal length: 50-60 characters
+    if 50 <= length <= 60:
+        score = 100
+        message = f"Optimal title length ({length} chars). Your title is perfect for search results."
+        passed = True
+        severity = "info"
+    elif 30 <= length < 50:
+        score = 85
+        message = f"Good title length ({length} chars). A bit longer (up to 60) might allow more keywords."
+        passed = True
+        severity = "info"
+    elif 10 <= length < 30:
+        score = 60
+        message = f"Title is short ({length} chars). Try adding more relevant keywords."
+        passed = True
+        severity = "warning"
+    elif 60 < length <= 80:
+        score = 75
+        message = f"Title is a bit long ({length} chars). It may be truncated in search results (max ~60)."
+        passed = True
+        severity = "warning"
     else:
-        return SEOAuditItem(
-            check="Title",
-            passed=True,
-            score=100,
-            message=f"Title is present and well-formed ({len(title)} chars)",
-            severity="info"
-        )
+        score = 40
+        message = f"Suboptimal title length ({length} chars). Aim for 50-60 characters."
+        passed = False
+        severity = "error"
+
+    return SEOAuditItem(
+        check="Title",
+        passed=passed,
+        score=score,
+        message=message,
+        severity=severity
+    )
 
 
 def check_description(soup, base_url: str) -> SEOAuditItem:
@@ -118,64 +130,92 @@ def check_description(soup, base_url: str) -> SEOAuditItem:
             check="Meta Description",
             passed=False,
             score=0,
-            message="No meta description found",
+            message="No meta description found. Descriptions improve CTR from search results.",
             severity="error"
         )
-    elif len(description) < 50:
-        return SEOAuditItem(
-            check="Meta Description",
-            passed=False,
-            score=50,
-            message=f"Description too short ({len(description)} chars, should be 50-160)",
-            severity="warning"
-        )
-    elif len(description) > 160:
-        return SEOAuditItem(
-            check="Meta Description",
-            passed=False,
-            score=50,
-            message=f"Description too long ({len(description)} chars, should be 50-160)",
-            severity="warning"
-        )
+    
+    length = len(description)
+    # Optimal length: 120-160 characters
+    if 120 <= length <= 160:
+        score = 100
+        message = f"Perfect meta description length ({length} chars)."
+        passed = True
+        severity = "info"
+    elif 80 <= length < 120:
+        score = 85
+        message = f"Good length ({length} chars). Adding a bit more detail (up to 160) might help."
+        passed = True
+        severity = "info"
+    elif 50 <= length < 80:
+        score = 65
+        message = f"Description is short ({length} chars). Use the space to explain your value proposition."
+        passed = True
+        severity = "warning"
+    elif 160 < length <= 230:
+        score = 70
+        message = f"Description is a bit long ({length} chars). It will be truncated in search results."
+        passed = True
+        severity = "warning"
     else:
-        return SEOAuditItem(
-            check="Meta Description",
-            passed=True,
-            score=100,
-            message=f"Description is present and well-formed ({len(description)} chars)",
-            severity="info"
-        )
+        score = 40
+        message = f"Suboptimal description length ({length} chars). Aim for 120-160 characters."
+        passed = False
+        severity = "error"
+
+    return SEOAuditItem(
+        check="Meta Description",
+        passed=passed,
+        score=score,
+        message=message,
+        severity=severity
+    )
 
 
 def check_headings(soup, base_url: str) -> SEOAuditItem:
     """Check if proper heading hierarchy exists"""
     h1_tags = soup.find_all('h1')
     h2_tags = soup.find_all('h2')
+    h3_tags = soup.find_all('h3')
+    
+    score = 100
+    messages = []
+    severity = "info"
     
     if not h1_tags:
-        return SEOAuditItem(
-            check="Headings",
-            passed=False,
-            score=0,
-            message="No H1 tags found",
-            severity="error"
-        )
+        score -= 50
+        messages.append("Missing H1 tag. Your page should have exactly one H1 tag.")
+        severity = "error"
     elif len(h1_tags) > 1:
-        return SEOAuditItem(
-            check="Headings",
-            passed=False,
-            score=50,
-            message=f"Multiple H1 tags found ({len(h1_tags)}), should only have 1",
-            severity="warning"
-        )
+        score -= 20
+        messages.append(f"Multiple H1 tags found ({len(h1_tags)}). Use only one for the main title.")
+        severity = "warning"
     else:
-        return SEOAuditItem(
-            check="Headings",
-            passed=True,
-            score=100,
-            message=f"Valid heading structure: 1 H1, {len(h2_tags)} H2",
-            severity="info"
-        )
+        messages.append("One H1 tag found.")
+
+    if not h2_tags:
+        score -= 15
+        messages.append("No H2 tags found. Use them to break up content sections.")
+        if severity == "info": severity = "warning"
+    else:
+        # Check if H2s are too many or too few (simple heuristic)
+        if len(h2_tags) < 2:
+            score -= 5
+            messages.append("Consider using more H2 tags for better content structure.")
+        else:
+            messages.append(f"Good heading structure with {len(h2_tags)} H2 tags.")
+
+    if not h3_tags and len(h2_tags) > 3:
+        score -= 5
+        messages.append("Consider using H3 tags to further organize your sub-sections.")
+
+    score = max(0, score)
+    return SEOAuditItem(
+        check="Headings Hierarchy",
+        passed=score >= 70,
+        score=score,
+        message=" ".join(messages),
+        severity=severity
+    )
 
 
 def check_images(soup, base_url: str) -> SEOAuditItem:
@@ -184,57 +224,73 @@ def check_images(soup, base_url: str) -> SEOAuditItem:
     
     if not images:
         return SEOAuditItem(
-            check="Images",
+            check="Image SEO",
             passed=True,
             score=100,
-            message="No images found on page",
+            message="No images found. No action needed.",
             severity="info"
         )
     
-    images_without_alt = 0
-    for img in images:
-        if not img.get('alt'):
-            images_without_alt += 1
+    total = len(images)
+    # Ignore small icons or spacers (simple heuristic: if they have a src with 'icon' or 'spacer')
+    meaningful_images = [img for img in images if 'spacer' not in img.get('src', '').lower()]
+    total_meaningful = len(meaningful_images)
     
-    if images_without_alt > 0:
-        percentage = (images_without_alt / len(images)) * 100
-        score = int(100 - percentage)
+    if total_meaningful == 0:
         return SEOAuditItem(
-            check="Image Alt Attributes",
-            passed=score >= 80,
-            score=score,
-            message=f"{images_without_alt}/{len(images)} images ({percentage:.1f}%) missing alt attributes",
-            severity="warning" if score >= 50 else "error"
+            check="Image SEO",
+            passed=True,
+            score=100,
+            message="Only decorative images found. No action needed.",
+            severity="info"
         )
+
+    images_with_alt = sum(1 for img in meaningful_images if img.get('alt'))
+    
+    score = int((images_with_alt / total_meaningful) * 100)
+    
+    if score == 100:
+        message = f"Excellent! All {total_meaningful} images have descriptive alt attributes."
+        severity = "info"
+    elif score >= 90:
+        message = f"Good. {images_with_alt}/{total_meaningful} images have alt attributes."
+        severity = "info"
+    elif score >= 70:
+        message = f"Fair. {images_with_alt}/{total_meaningful} images have alt attributes. Some are missing."
+        severity = "warning"
     else:
-        return SEOAuditItem(
-            check="Image Alt Attributes",
-            passed=True,
-            score=100,
-            message=f"All {len(images)} images have alt attributes",
-            severity="info"
-        )
+        message = f"Poor. Only {images_with_alt}/{total_meaningful} images have alt attributes. Alt text is vital for accessibility and image search ranking."
+        severity = "error"
+
+    return SEOAuditItem(
+        check="Image SEO",
+        passed=score >= 80,
+        score=score,
+        message=message,
+        severity=severity
+    )
 
 
 def check_structured_data(soup, base_url: str) -> SEOAuditItem:
     """Check if structured data is present"""
     schema = extract_schema_org(soup)
+    json_ld = soup.find_all('script', type='application/ld+json')
     
-    if not schema:
-        return SEOAuditItem(
-            check="Structured Data",
-            passed=False,
-            score=0,
-            message="No structured data (Schema.org) found",
-            severity="warning"
-        )
-    else:
+    if schema or json_ld:
         return SEOAuditItem(
             check="Structured Data",
             passed=True,
             score=100,
-            message=f"Structured data found: {schema.get('@type', 'Unknown')}",
+            message=f"Structured data (JSON-LD/Schema) found. This helps search engines understand your content.",
             severity="info"
+        )
+    else:
+        return SEOAuditItem(
+            check="Structured Data",
+            passed=False,
+            score=0,
+            message="No structured data found. Consider adding JSON-LD for better rich results.",
+            severity="warning"
         )
 
 
@@ -242,81 +298,118 @@ def check_open_graph(soup, base_url: str) -> SEOAuditItem:
     """Check if Open Graph tags are present"""
     og_tags = extract_open_graph(soup)
     
-    if not og_tags:
-        return SEOAuditItem(
-            check="Open Graph Tags",
-            passed=False,
-            score=0,
-            message="No Open Graph tags found",
-            severity="warning"
-        )
+    required = ['title', 'description', 'image', 'url']
+    found = [tag for tag in required if tag in og_tags]
     
-    required_tags = ['title', 'description', 'image', 'url']
-    found_tags = [tag for tag in required_tags if tag in og_tags]
-    missing_tags = [tag for tag in required_tags if tag not in og_tags]
+    score = int((len(found) / len(required)) * 100)
     
-    score = int((len(found_tags) / len(required_tags)) * 100)
-    
-    if missing_tags:
-        return SEOAuditItem(
-            check="Open Graph Tags",
-            passed=score >= 75,
-            score=score,
-            message=f"Missing OG tags: {', '.join(missing_tags)}",
-            severity="warning"
-        )
+    if score == 100:
+        message = "All core Open Graph tags are present."
+        severity = "info"
+    elif score >= 50:
+        missing = [tag for tag in required if tag not in og_tags]
+        message = f"Partially optimized. Missing OG tags: {', '.join(missing)}."
+        severity = "warning"
     else:
-        return SEOAuditItem(
-            check="Open Graph Tags",
-            passed=True,
-            score=100,
-            message=f"All required OG tags present",
-            severity="info"
-        )
+        message = "Open Graph tags are missing. These are vital for social media sharing."
+        severity = "warning"
+
+    return SEOAuditItem(
+        check="Social Sharing (OG)",
+        passed=score >= 75,
+        score=score,
+        message=message,
+        severity=severity
+    )
 
 
 def check_mobile_friendly(soup, base_url: str) -> SEOAuditItem:
     """Check if page has mobile viewport meta tag"""
     viewport = soup.find('meta', {'name': 'viewport'})
     
-    if not viewport:
+    if viewport:
+        content = viewport.get('content', '')
+        if 'width=device-width' in content:
+            return SEOAuditItem(
+                check="Mobile Friendly",
+                passed=True,
+                score=100,
+                message="Viewport meta tag is correctly configured for mobile devices.",
+                severity="info"
+            )
+        else:
+            return SEOAuditItem(
+                check="Mobile Friendly",
+                passed=False,
+                score=50,
+                message="Viewport tag found but might not be optimized (width=device-width missing).",
+                severity="warning"
+            )
+    else:
         return SEOAuditItem(
             check="Mobile Friendly",
             passed=False,
             score=0,
-            message="No viewport meta tag found",
+            message="Missing viewport meta tag. This is critical for mobile optimization.",
             severity="error"
         )
-    else:
-        return SEOAuditItem(
-            check="Mobile Friendly",
-            passed=True,
-            score=100,
-            message="Viewport meta tag is present",
-            severity="info"
-        )
 
 
-def check_robots_txt(soup, base_url: str) -> SEOAuditItem:
-    """Check if page respects robots.txt"""
-    robots_allowed = robots_checker.can_fetch(base_url)
+def check_technical_seo(soup, base_url: str) -> List[SEOAuditItem]:
+    """Check technical SEO elements like canonicals, SSL, and robots"""
+    items = []
     
-    if not robots_allowed:
-        return SEOAuditItem(
-            check="Robots.txt Compliance",
-            passed=False,
-            score=0,
-            message="This page is blocked by robots.txt",
-            severity="warning"
-        )
-    else:
-        return SEOAuditItem(
-            check="Robots.txt Compliance",
-            passed=True,
-            score=100,
-            message="Page is allowed by robots.txt",
-            severity="info"
-        )
+    # 1. SSL Check
+    is_https = base_url.startswith('https://')
+    items.append(SEOAuditItem(
+        check="Security (SSL)",
+        passed=is_https,
+        score=100 if is_https else 0,
+        message="Site is using HTTPS." if is_https else "Site is NOT using HTTPS. Security is a ranking factor.",
+        severity="info" if is_https else "error"
+    ))
+    
+    # 2. Canonical Check
+    canonical = soup.find('link', rel='canonical')
+    items.append(SEOAuditItem(
+        check="Canonical Link",
+        passed=bool(canonical),
+        score=100 if canonical else 0,
+        message="Canonical link found." if canonical else "Missing canonical link. This can lead to duplicate content issues.",
+        severity="info" if canonical else "warning"
+    ))
+    
+    # 3. Robots meta
+    robots_meta = soup.find('meta', {'name': 'robots'})
+    noindex = robots_meta and 'noindex' in robots_meta.get('content', '').lower()
+    items.append(SEOAuditItem(
+        check="Search Indexing",
+        passed=not noindex,
+        score=100 if not noindex else 0,
+        message="Page is indexable." if not noindex else "Page has 'noindex' tag. It will not appear in search results.",
+        severity="info" if not noindex else "error"
+    ))
+    
+    # 4. URL structure
+    parsed = urlparse(base_url)
+    url_score = 100
+    url_msg = "URL structure is clean."
+    if len(base_url) > 100:
+        url_score -= 30
+        url_msg = "URL is very long. Short URLs are better for SEO."
+    if '_' in parsed.path:
+        url_score -= 20
+        url_msg = "URL contains underscores. Use hyphens (-) instead."
+    
+    items.append(SEOAuditItem(
+        check="URL Optimization",
+        passed=url_score >= 80,
+        score=url_score,
+        message=url_msg,
+        severity="info" if url_score >= 80 else "warning"
+    ))
+    
+    return items
 
 
 @router.post("/seo-audit", response_model=SEOAuditResponse)
@@ -377,12 +470,36 @@ async def seo_audit_endpoint(
             check_structured_data(soup, url),
             check_open_graph(soup, url),
             check_mobile_friendly(soup, url),
-            check_robots_txt(soup, url),
         ]
         
-        # Calculate overall score as average of individual scores
-        total_score = sum(item.score for item in audit_items)
-        score = int(total_score / len(audit_items))
+        # Add technical SEO checks
+        audit_items.extend(check_technical_seo(soup, url))
+        
+        # Calculate overall score as weighted average
+        # Critical items have more weight
+        weights = {
+            "Title": 2.0,
+            "Meta Description": 1.5,
+            "Headings Hierarchy": 1.0,
+            "Image SEO": 0.8,
+            "Structured Data": 1.0,
+            "Social Sharing (OG)": 0.5,
+            "Mobile Friendly": 1.5,
+            "Security (SSL)": 1.0,
+            "Canonical Link": 0.8,
+            "Search Indexing": 2.0,
+            "URL Optimization": 0.5,
+        }
+        
+        weighted_sum = 0
+        total_weight = 0
+        
+        for item in audit_items:
+            weight = weights.get(item.check, 1.0)
+            weighted_sum += item.score * weight
+            total_weight += weight
+            
+        score = int(weighted_sum / total_weight)
         
         processing_time_ms = int((time.time() - start_time) * 1000)
         

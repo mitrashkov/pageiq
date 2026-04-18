@@ -116,7 +116,9 @@ class BrowserService:
                 locale='en-US',
                 timezone_id='America/New_York',
                 geolocation=None,
-                permissions=[],
+                permissions=['geolocation', 'notifications'],
+                color_scheme='dark',
+                java_script_enabled=True,
             )
             self.context = await ctx if inspect.isawaitable(ctx) else ctx
 
@@ -124,16 +126,30 @@ class BrowserService:
             await self.context.add_init_script("""
                 // Override navigator properties
                 Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
+                
+                // Chrome property
+                window.chrome = { runtime: {} };
 
                 // Override plugins
                 Object.defineProperty(navigator, 'plugins', {
-                    get: () => [1, 2, 3, 4, 5],
+                    get: () => [
+                        { name: 'Chrome PDF Viewer', filename: 'internal-pdf-viewer' },
+                        { name: 'YouTube Plug-in', filename: 'internal-youtube-plugin' }
+                    ],
                 });
 
                 // Override languages
                 Object.defineProperty(navigator, 'languages', {
                     get: () => ['en-US', 'en'],
                 });
+
+                // WebGL fingerprinting protection
+                const getParameter = WebGLRenderingContext.prototype.getParameter;
+                WebGLRenderingContext.prototype.getParameter = function(parameter) {
+                    if (parameter === 37445) return 'Intel Open Source Technology Center';
+                    if (parameter === 37446) return 'Mesa DRI Intel(R) HD Graphics 520 (Skylake GT2)';
+                    return getParameter(parameter);
+                };
             """)
 
             self._initialized = True
