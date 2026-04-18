@@ -37,6 +37,10 @@ class BrowserService:
             os.environ['PLAYWRIGHT_BROWSERS_PATH'] = os.path.abspath('./pw-browsers')
             
         logger.info(f"Forced PLAYWRIGHT_BROWSERS_PATH to {os.environ['PLAYWRIGHT_BROWSERS_PATH']}")
+        if os.path.exists(os.environ['PLAYWRIGHT_BROWSERS_PATH']):
+            logger.info(f"Browser path exists. Contents: {os.listdir(os.environ['PLAYWRIGHT_BROWSERS_PATH'])}")
+        else:
+            logger.warning(f"Browser path DOES NOT EXIST: {os.environ['PLAYWRIGHT_BROWSERS_PATH']}")
 
     async def __aenter__(self):
         await self.initialize()

@@ -22,7 +22,7 @@ if [ -d "$PLAYWRIGHT_BROWSERS_PATH" ]; then
     echo "Directory exists. Contents:"
     ls -la "$PLAYWRIGHT_BROWSERS_PATH"
     echo "Recursive search for chrome-headless-shell:"
-    find "$PLAYWRIGHT_BROWSERS_PATH" -name "chrome-headless-shell"
+    find "$PLAYWRIGHT_BROWSERS_PATH" -name "chrome-headless-shell" -exec ls -la {} +
 else
     echo "ERROR: Browsers directory not found in $PLAYWRIGHT_BROWSERS_PATH"
 fi
