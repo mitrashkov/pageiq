@@ -57,6 +57,7 @@ class SEOAuditItem(BaseModel):
     """Single SEO audit item"""
     check: str
     passed: bool
+    score: int  # 0-100
     message: str
     severity: str  # info, warning, error
 
@@ -78,6 +79,7 @@ def check_title(soup, base_url: str) -> SEOAuditItem:
         return SEOAuditItem(
             check="Title",
             passed=False,
+            score=0,
             message="No title tag found",
             severity="error"
         )
@@ -85,6 +87,7 @@ def check_title(soup, base_url: str) -> SEOAuditItem:
         return SEOAuditItem(
             check="Title",
             passed=False,
+            score=50,
             message=f"Title too short ({len(title)} chars, should be 10-60)",
             severity="warning"
         )
@@ -92,6 +95,7 @@ def check_title(soup, base_url: str) -> SEOAuditItem:
         return SEOAuditItem(
             check="Title",
             passed=False,
+            score=50,
             message=f"Title too long ({len(title)} chars, should be 10-60)",
             severity="warning"
         )
@@ -99,6 +103,7 @@ def check_title(soup, base_url: str) -> SEOAuditItem:
         return SEOAuditItem(
             check="Title",
             passed=True,
+            score=100,
             message=f"Title is present and well-formed ({len(title)} chars)",
             severity="info"
         )
@@ -112,6 +117,7 @@ def check_description(soup, base_url: str) -> SEOAuditItem:
         return SEOAuditItem(
             check="Meta Description",
             passed=False,
+            score=0,
             message="No meta description found",
             severity="error"
         )
@@ -119,6 +125,7 @@ def check_description(soup, base_url: str) -> SEOAuditItem:
         return SEOAuditItem(
             check="Meta Description",
             passed=False,
+            score=50,
             message=f"Description too short ({len(description)} chars, should be 50-160)",
             severity="warning"
         )
@@ -126,6 +133,7 @@ def check_description(soup, base_url: str) -> SEOAuditItem:
         return SEOAuditItem(
             check="Meta Description",
             passed=False,
+            score=50,
             message=f"Description too long ({len(description)} chars, should be 50-160)",
             severity="warning"
         )
@@ -133,6 +141,7 @@ def check_description(soup, base_url: str) -> SEOAuditItem:
         return SEOAuditItem(
             check="Meta Description",
             passed=True,
+            score=100,
             message=f"Description is present and well-formed ({len(description)} chars)",
             severity="info"
         )
@@ -147,6 +156,7 @@ def check_headings(soup, base_url: str) -> SEOAuditItem:
         return SEOAuditItem(
             check="Headings",
             passed=False,
+            score=0,
             message="No H1 tags found",
             severity="error"
         )
@@ -154,6 +164,7 @@ def check_headings(soup, base_url: str) -> SEOAuditItem:
         return SEOAuditItem(
             check="Headings",
             passed=False,
+            score=50,
             message=f"Multiple H1 tags found ({len(h1_tags)}), should only have 1",
             severity="warning"
         )
@@ -161,6 +172,7 @@ def check_headings(soup, base_url: str) -> SEOAuditItem:
         return SEOAuditItem(
             check="Headings",
             passed=True,
+            score=100,
             message=f"Valid heading structure: 1 H1, {len(h2_tags)} H2",
             severity="info"
         )
@@ -174,6 +186,7 @@ def check_images(soup, base_url: str) -> SEOAuditItem:
         return SEOAuditItem(
             check="Images",
             passed=True,
+            score=100,
             message="No images found on page",
             severity="info"
         )
@@ -185,16 +198,19 @@ def check_images(soup, base_url: str) -> SEOAuditItem:
     
     if images_without_alt > 0:
         percentage = (images_without_alt / len(images)) * 100
+        score = int(100 - percentage)
         return SEOAuditItem(
             check="Image Alt Attributes",
-            passed=False,
+            passed=score >= 80,
+            score=score,
             message=f"{images_without_alt}/{len(images)} images ({percentage:.1f}%) missing alt attributes",
-            severity="warning"
+            severity="warning" if score >= 50 else "error"
         )
     else:
         return SEOAuditItem(
             check="Image Alt Attributes",
             passed=True,
+            score=100,
             message=f"All {len(images)} images have alt attributes",
             severity="info"
         )
@@ -208,6 +224,7 @@ def check_structured_data(soup, base_url: str) -> SEOAuditItem:
         return SEOAuditItem(
             check="Structured Data",
             passed=False,
+            score=0,
             message="No structured data (Schema.org) found",
             severity="warning"
         )
@@ -215,6 +232,7 @@ def check_structured_data(soup, base_url: str) -> SEOAuditItem:
         return SEOAuditItem(
             check="Structured Data",
             passed=True,
+            score=100,
             message=f"Structured data found: {schema.get('@type', 'Unknown')}",
             severity="info"
         )
@@ -228,17 +246,22 @@ def check_open_graph(soup, base_url: str) -> SEOAuditItem:
         return SEOAuditItem(
             check="Open Graph Tags",
             passed=False,
+            score=0,
             message="No Open Graph tags found",
             severity="warning"
         )
     
     required_tags = ['title', 'description', 'image', 'url']
+    found_tags = [tag for tag in required_tags if tag in og_tags]
     missing_tags = [tag for tag in required_tags if tag not in og_tags]
+    
+    score = int((len(found_tags) / len(required_tags)) * 100)
     
     if missing_tags:
         return SEOAuditItem(
             check="Open Graph Tags",
-            passed=False,
+            passed=score >= 75,
+            score=score,
             message=f"Missing OG tags: {', '.join(missing_tags)}",
             severity="warning"
         )
@@ -246,6 +269,7 @@ def check_open_graph(soup, base_url: str) -> SEOAuditItem:
         return SEOAuditItem(
             check="Open Graph Tags",
             passed=True,
+            score=100,
             message=f"All required OG tags present",
             severity="info"
         )
@@ -259,6 +283,7 @@ def check_mobile_friendly(soup, base_url: str) -> SEOAuditItem:
         return SEOAuditItem(
             check="Mobile Friendly",
             passed=False,
+            score=0,
             message="No viewport meta tag found",
             severity="error"
         )
@@ -266,6 +291,7 @@ def check_mobile_friendly(soup, base_url: str) -> SEOAuditItem:
         return SEOAuditItem(
             check="Mobile Friendly",
             passed=True,
+            score=100,
             message="Viewport meta tag is present",
             severity="info"
         )
@@ -279,6 +305,7 @@ def check_robots_txt(soup, base_url: str) -> SEOAuditItem:
         return SEOAuditItem(
             check="Robots.txt Compliance",
             passed=False,
+            score=0,
             message="This page is blocked by robots.txt",
             severity="warning"
         )
@@ -286,6 +313,7 @@ def check_robots_txt(soup, base_url: str) -> SEOAuditItem:
         return SEOAuditItem(
             check="Robots.txt Compliance",
             passed=True,
+            score=100,
             message="Page is allowed by robots.txt",
             severity="info"
         )
@@ -352,9 +380,9 @@ async def seo_audit_endpoint(
             check_robots_txt(soup, url),
         ]
         
-        # Calculate score
-        passed_items = sum(1 for item in audit_items if item.passed)
-        score = int((passed_items / len(audit_items)) * 100)
+        # Calculate overall score as average of individual scores
+        total_score = sum(item.score for item in audit_items)
+        score = int(total_score / len(audit_items))
         
         processing_time_ms = int((time.time() - start_time) * 1000)
         
