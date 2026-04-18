@@ -27,17 +27,19 @@ class BrowserService:
         self.browser: Optional[Browser] = None
         self.context: Optional[BrowserContext] = None
         
-        # Ensure PLAYWRIGHT_BROWSERS_PATH is set for Render
-        if 'PLAYWRIGHT_BROWSERS_PATH' not in os.environ:
-            # Try common Render project paths
-            possible_paths = [
-                './playwright-browsers',
-                '/opt/render/project/src/playwright-browsers',
-            ]
+        # Force PLAYWRIGHT_BROWSERS_PATH for Render
+        # We use the absolute path to ensure Playwright finds it regardless of CWD
+        render_path = '/opt/render/project/src/playwright-browsers'
+        if os.path.exists(render_path):
+            os.environ['PLAYWRIGHT_BROWSERS_PATH'] = render_path
+            logger.info(f"Forced PLAYWRIGHT_BROWSERS_PATH to {os.environ['PLAYWRIGHT_BROWSERS_PATH']}")
+        elif 'PLAYWRIGHT_BROWSERS_PATH' not in os.environ:
+            # Fallback for local development or other environments
+            possible_paths = ['./playwright-browsers']
             for path in possible_paths:
                 if os.path.exists(path):
                     os.environ['PLAYWRIGHT_BROWSERS_PATH'] = os.path.abspath(path)
-                    logger.info(f"Set PLAYWRIGHT_BROWSERS_PATH to {os.environ['PLAYWRIGHT_BROWSERS_PATH']}")
+                    logger.info(f"Set local PLAYWRIGHT_BROWSERS_PATH to {os.environ['PLAYWRIGHT_BROWSERS_PATH']}")
                     break
 
     async def __aenter__(self):
