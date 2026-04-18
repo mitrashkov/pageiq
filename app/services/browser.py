@@ -28,13 +28,13 @@ class BrowserService:
         self.context: Optional[BrowserContext] = None
         
         # Force PLAYWRIGHT_BROWSERS_PATH for Render/Local
-        # Using absolute path for Render Free Plan reliability
+        # Using .playwright in the project root as it's the most common convention
         render_root = '/opt/render/project/src'
         if os.path.exists(render_root):
-            os.environ['PLAYWRIGHT_BROWSERS_PATH'] = os.path.join(render_root, 'pw-browsers')
+            os.environ['PLAYWRIGHT_BROWSERS_PATH'] = os.path.join(render_root, '.playwright')
         else:
             # Local development fallback
-            os.environ['PLAYWRIGHT_BROWSERS_PATH'] = os.path.abspath('./pw-browsers')
+            os.environ['PLAYWRIGHT_BROWSERS_PATH'] = os.path.abspath('./.playwright')
             
         logger.info(f"Forced PLAYWRIGHT_BROWSERS_PATH to {os.environ['PLAYWRIGHT_BROWSERS_PATH']}")
         if os.path.exists(os.environ['PLAYWRIGHT_BROWSERS_PATH']):

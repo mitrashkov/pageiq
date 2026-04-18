@@ -2,11 +2,11 @@ services:
   - type: web
     name: pageiq-api
     env: python
-    buildCommand: pip install --upgrade pip && pip install --no-cache-dir -r requirements.txt && PLAYWRIGHT_BROWSERS_PATH=/opt/render/project/src/pw-browsers python -m playwright install chromium
+    buildCommand: chmod +x build.sh && ./build.sh
     startCommand: ./start.sh
     envVars:
       - key: PLAYWRIGHT_BROWSERS_PATH
-        value: /opt/render/project/src/pw-browsers
+        value: /opt/render/project/src/.playwright
       - key: XDG_CACHE_HOME
         value: /opt/render/project/src/.cache
       - key: PYTHON_VERSION

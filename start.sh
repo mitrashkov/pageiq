@@ -14,9 +14,9 @@ echo "Installing dependencies..."
 # pip install --no-cache-dir -r requirements.txt
 
 # Ensure absolute path for Playwright browsers (Render Free Plan fix)
-export PLAYWRIGHT_BROWSERS_PATH=/opt/render/project/src/pw-browsers
+export PLAYWRIGHT_BROWSERS_PATH=/opt/render/project/src/.playwright
 
-# Browsers are installed during buildCommand to /opt/render/project/src/pw-browsers
+# Browsers are installed during build.sh to /opt/render/project/src/.playwright
 echo "Checking Playwright browsers in $PLAYWRIGHT_BROWSERS_PATH..."
 if [ -d "$PLAYWRIGHT_BROWSERS_PATH" ]; then
     echo "Directory exists. Contents:"
@@ -25,6 +25,9 @@ if [ -d "$PLAYWRIGHT_BROWSERS_PATH" ]; then
     find "$PLAYWRIGHT_BROWSERS_PATH" -name "chrome-headless-shell" -exec ls -la {} +
 else
     echo "ERROR: Browsers directory not found in $PLAYWRIGHT_BROWSERS_PATH"
+    # Attempt one-time recovery if possible (might fail on Free Plan)
+    echo "Attempting emergency browser install..."
+    python -m playwright install chromium
 fi
 
 # Create necessary directories
