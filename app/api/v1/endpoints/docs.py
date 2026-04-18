@@ -8,10 +8,96 @@ from fastapi.responses import HTMLResponse
 router = APIRouter()
 
 @router.get("/", response_class=HTMLResponse)
+async def get_landing():
+    """Serve public landing page"""
+    return HTMLResponse(content=LANDING_PAGE_HTML)
+
+
 @router.get("/docs", response_class=HTMLResponse)
 async def get_docs():
     """Serve the modern, comprehensive documentation page"""
     return HTMLResponse(content=MODERN_DOCS_HTML)
+
+LANDING_PAGE_HTML = """
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PageIQ - Website Intelligence API</title>
+    <style>
+        :root {
+            --bg: #0b1020;
+            --panel: #111831;
+            --text: #e5e7eb;
+            --muted: #94a3b8;
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --border: #233056;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; background: var(--bg); color: var(--text); }
+        .wrap { max-width: 1024px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+        .nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4rem; }
+        .brand { font-weight: 800; letter-spacing: 0.2px; }
+        .cta { background: var(--primary); color: #fff; text-decoration: none; padding: 0.65rem 1rem; border-radius: 0.6rem; font-weight: 600; }
+        .cta:hover { background: var(--primary-hover); }
+        .hero h1 { font-size: clamp(2rem, 5vw, 3.5rem); line-height: 1.1; margin-bottom: 1rem; }
+        .hero p { color: var(--muted); font-size: 1.05rem; max-width: 760px; margin-bottom: 1.5rem; }
+        .buttons { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 2rem; }
+        .btn { text-decoration: none; border-radius: 0.6rem; padding: 0.7rem 1rem; font-weight: 600; border: 1px solid transparent; }
+        .btn-primary { background: var(--primary); color: #fff; }
+        .btn-secondary { border-color: var(--border); color: var(--text); background: transparent; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 0.9rem; margin-top: 2rem; }
+        .card { border: 1px solid var(--border); background: var(--panel); border-radius: 0.9rem; padding: 1rem; }
+        .card h3 { font-size: 1rem; margin-bottom: 0.35rem; }
+        .card p { color: var(--muted); font-size: 0.93rem; }
+        .api { margin-top: 3rem; padding: 1rem; border: 1px solid var(--border); border-radius: 0.9rem; background: var(--panel); }
+        .api code { color: #c7d2fe; }
+        footer { margin-top: 3rem; color: var(--muted); font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <div class="nav">
+            <div class="brand">PageIQ</div>
+            <a class="cta" href="/docs">Open Docs</a>
+        </div>
+        <section class="hero">
+            <h1>Website Intelligence API for Real-World Automation</h1>
+            <p>PageIQ turns any URL into structured business data: metadata, emails, schema, Open Graph tags, SEO diagnostics, and technology insights in one request.</p>
+            <div class="buttons">
+                <a class="btn btn-primary" href="/docs">Read API Docs</a>
+                <a class="btn btn-secondary" href="/api/v1/health">Health Check</a>
+            </div>
+        </section>
+        <section class="grid">
+            <article class="card">
+                <h3>Analyze</h3>
+                <p>Get title, description, socials, contact data, language, country hints, schema, and more.</p>
+            </article>
+            <article class="card">
+                <h3>Extract</h3>
+                <p>Use dedicated endpoints for emails, schema.org, and metadata extraction.</p>
+            </article>
+            <article class="card">
+                <h3>SEO</h3>
+                <p>Run SEO audit checks and broken-link scanning for any public page.</p>
+            </article>
+            <article class="card">
+                <h3>Tech Detection</h3>
+                <p>Detect framework and platform signals plus web languages like HTML, CSS, and JavaScript.</p>
+            </article>
+        </section>
+        <section class="api">
+            <div>Base URL</div>
+            <code>https://pageiq.pompora.dev/api/v1</code>
+        </section>
+        <footer>PageIQ API</footer>
+    </div>
+</body>
+</html>
+"""
 
 MODERN_DOCS_HTML = """
 <!DOCTYPE html>

@@ -8,8 +8,9 @@ Extract email addresses from a webpage or an entire website. Returns validated, 
 **Request Body:**
 - `url` (string, required): Website URL to extract emails from.
 - `options` (object, optional): Extraction options.
-    - `deep_search` (bool): If true, crawls the website to find emails on multiple pages (default: false). **Available on Pro, Business, and Enterprise plans.**
-    - `pages_limit` (int): Maximum number of pages to crawl during deep search (default: 10, max: 20).
+- `options.deep_search` (bool): If true, crawls the website to find emails on multiple pages (default: false). **Available on PRO, ULTRA, and MEGA plans.**
+- `options.pages_limit` (int): Maximum pages to crawl. Base cap is 20; higher limits are plan-gated when `deep_search=true`.
+- `options.use_browser` (bool): Enables browser rendering for JS-heavy sites (PRO/ULTRA/MEGA only).
 
 **Response:**
 - `url` (string): The analyzed URL.

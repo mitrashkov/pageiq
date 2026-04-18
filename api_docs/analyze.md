@@ -27,7 +27,6 @@ Analyze a website and return structured business data including metadata, contac
 - `og_tags` (object): Open Graph tags.
 - `screenshot_url` (string): Screenshot URL (if requested).
 - `page_speed_score` (int): Page speed score.
-- `ai_summary` (string): AI-generated summary.
 - `timestamp` (int): Timestamp (ms).
 - `processing_time_ms` (int): Processing time (ms).
 - `diagnostics` (object): Diagnostics and fallback info.

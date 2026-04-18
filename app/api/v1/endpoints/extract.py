@@ -2,13 +2,12 @@
 Enhanced data extraction endpoints for Week 8 features.
 """
 import time
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, HttpUrl, Field
 
 from app.core.auth import get_optional_user
-from app.core.responses import APIResponse
 from app.models import User
 from app.services.fetcher import html_fetcher
 from app.services.robots_checker import robots_checker
@@ -40,10 +39,17 @@ class ExtractEmailsResponse(BaseModel):
     processing_time_ms: int
 
 
+class ExtractSchemaRequest(BaseModel):
+    """Request model for Schema.org extraction"""
+    url: HttpUrl
+    options: dict = {}
+
+
 class ExtractSchemaResponse(BaseModel):
-    """Response model for schema extraction"""
+    """Response model for Schema.org extraction"""
     url: str
-    schema_org: Optional[Dict[str, Any]]
+    schema_org: Optional[Dict[str, Any]] = None
+    og_tags: Optional[Dict[str, Any]] = None
     timestamp: float
     processing_time_ms: int
 
@@ -156,64 +162,6 @@ async def extract_emails_endpoint(
             status_code=500,
             detail=f"Error extracting emails: {str(e)}"
         )
-
-
-@router.post("/schema", response_model=ExtractSchemaResponse)
-async def extract_schema_endpoint(
-    request: ExtractEmailsRequest, # Reuse model for URL/options
-    user: User = Depends(get_optional_user),
-):
-    """
-    Extract Schema.org structured data from a website.
-    
-    This endpoint finds and parses JSON-LD or Microdata structured content.
-    """
-    start_time = time.time()
-    url = str(validate_url_input(str(request.url)))
-    options = validate_options_input(request.options)
-    use_browser = bool(options.get("use_browser", False))
-    
-    try:
-        # Fetch HTML asynchronously
-        html_content, error, _ = await html_fetcher.fetch_html_async(url, use_browser=use_browser)
-        if error or not html_content:
-            raise HTTPException(status_code=400, detail=f"Failed to fetch webpage: {error}")
-            
-        # Parse HTML
-        soup = html_fetcher.parse_html(html_content)
-        if soup is None:
-            raise HTTPException(status_code=400, detail="Failed to parse HTML content")
-            
-        # Extract Schema
-        schema_data = extract_schema_org(soup)
-        
-        processing_time_ms = int((time.time() - start_time) * 1000)
-        
-        return ExtractSchemaResponse(
-            url=url,
-            schema_org=schema_data,
-            timestamp=time.time(),
-            processing_time_ms=processing_time_ms
-        )
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error extracting schema: {str(e)}")
-
-
-class ExtractSchemaRequest(BaseModel):
-    """Request model for Schema.org extraction"""
-    url: HttpUrl
-    options: dict = {}
-
-
-class ExtractSchemaResponse(BaseModel):
-    """Response model for Schema.org extraction"""
-    url: str
-    schema_org: Optional[dict]
-    og_tags: Optional[dict]
-    timestamp: float
-    processing_time_ms: int
 
 
 @router.post("/schema", response_model=ExtractSchemaResponse)

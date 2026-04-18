@@ -39,6 +39,7 @@ class AnalyzeRequest(BaseModel):
 class TechDetectionResponse(BaseModel):
     """Response model for tech detection"""
     url: str
+    languages: List[str]
     technologies: List[str]
     timestamp: float
     processing_time_ms: int
@@ -149,12 +150,15 @@ async def detect_tech_endpoint(
         # Detect Tech
         from app.services.tech_detector import tech_detector
         tech_stack = tech_detector.detect_technologies(soup, html_content, headers)
+        languages = tech_detector.detect_web_languages(soup, html_content)
+        combined_stack = sorted(set(tech_stack + languages))
         
         processing_time_ms = int((time.time() - start_time) * 1000)
         
         return TechDetectionResponse(
             url=url,
-            technologies=tech_stack,
+            languages=languages,
+            technologies=combined_stack,
             timestamp=time.time(),
             processing_time_ms=processing_time_ms
         )

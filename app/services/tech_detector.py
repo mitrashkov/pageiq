@@ -234,6 +234,31 @@ class TechStackDetector:
         # Sort and return
         return sorted(list(detected))
 
+    def detect_web_languages(self, soup: BeautifulSoup, html_content: str) -> List[str]:
+        """
+        Detect foundational web languages present in a page.
+
+        Returns:
+            List of language names such as HTML, CSS, JavaScript.
+        """
+        languages: Set[str] = set()
+
+        if html_content.strip():
+            languages.add("HTML")
+
+        has_stylesheet_link = bool(soup.find("link", {"rel": "stylesheet", "href": True}))
+        has_style_tag = bool(soup.find("style"))
+        has_inline_style = bool(soup.find(attrs={"style": True}))
+        if has_stylesheet_link or has_style_tag or has_inline_style:
+            languages.add("CSS")
+
+        has_script_tag = bool(soup.find("script"))
+        has_inline_event_handlers = bool(re.search(r"\son\w+\s*=", html_content, re.IGNORECASE))
+        if has_script_tag or has_inline_event_handlers:
+            languages.add("JavaScript")
+
+        return sorted(list(languages))
+
 
 # Global instance
 tech_detector = TechStackDetector()

@@ -11,7 +11,7 @@ Extract Schema.org structured data and Open Graph tags from a webpage.
 
 **Response:**
 - `url` (string): The analyzed URL.
-- `schema_org` (object): Extracted Schema.org data.
-- `og_tags` (object): Extracted Open Graph tags.
+- `schema_org` (object|null): Extracted Schema.org data (null if not found).
+- `og_tags` (object|null): Extracted Open Graph tags (null if not found).
 - `timestamp` (float): Timestamp.
 - `processing_time_ms` (int): Processing time (ms).
