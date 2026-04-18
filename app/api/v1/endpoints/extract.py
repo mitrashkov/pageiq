@@ -5,7 +5,7 @@ import time
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel, HttpUrl
+from pydantic import BaseModel, HttpUrl, Field
 
 from app.core.auth import get_optional_user
 from app.core.responses import APIResponse
@@ -27,8 +27,8 @@ router = APIRouter()
 
 class ExtractEmailsRequest(BaseModel):
     """Request model for email extraction"""
-    url: HttpUrl
-    options: dict = {}
+    url: HttpUrl = Field(..., description="The URL of the website to extract emails from")
+    options: dict = Field(default_factory=dict, description="Extraction options including deep_search and pages_limit")
 
 
 class ExtractEmailsResponse(BaseModel):

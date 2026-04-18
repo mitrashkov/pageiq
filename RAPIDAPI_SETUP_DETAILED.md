@@ -41,8 +41,9 @@ For each endpoint below, click **"Add Endpoint"** in the **Endpoints** tab and f
 - **Name:** `Extract Emails`
 - **Description:** `Professional-grade email extraction. Features AI-powered deep site crawling for massive lead generation.`
 - **Headers:** Add `Content-Type` with value `application/json`.
-- **Body:**
-    - **Payload Name:** `body`
+- **Body (Request Body Tab):**
+    - **Media Type:** `application/json`
+    - **Payload Name:** `body` (This MUST be `body` in the RapidAPI dashboard field)
     - **Example Value:**
       ```json
       {
