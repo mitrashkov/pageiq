@@ -806,77 +806,146 @@ MODERN_DOCS_HTML = """
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PageIQ API Documentation | Developer Portal</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
         :root {
             --primary: #6366f1;
-            --primary-hover: #4f46e5;
+            --primary-dark: #4f46e5;
+            --primary-light: #eef2ff;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --error: #ef4444;
             --bg: #f8fafc;
             --sidebar-bg: #ffffff;
             --text-main: #1e293b;
             --text-muted: #64748b;
-            --code-bg: #1e293b;
             --border: #e2e8f0;
+            --code-bg: #0f172a;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Inter', -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text-main); line-height: 1.6; }
+        html { scroll-behavior: smooth; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text-main); line-height: 1.6; }
 
         .layout { display: flex; min-height: 100vh; }
 
         /* Sidebar */
         .sidebar {
-            width: 280px;
+            width: 300px;
             background: var(--sidebar-bg);
             border-right: 1px solid var(--border);
-            padding: 2rem;
+            padding: 2rem 1.5rem;
             position: sticky;
             top: 0;
             height: 100vh;
             overflow-y: auto;
+            z-index: 50;
         }
 
-        .logo { font-size: 1.5rem; font-weight: 800; color: var(--primary); margin-bottom: 2rem; display: flex; align-items: center; gap: 0.5rem; }
-        .nav-group { margin-bottom: 2rem; }
-        .nav-title { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.05em; margin-bottom: 0.75rem; }
-        .nav-link { display: block; padding: 0.5rem 0; color: var(--text-main); text-decoration: none; font-size: 0.9rem; transition: color 0.2s; }
-        .nav-link:hover { color: var(--primary); }
+        .logo { 
+            font-size: 1.5rem; 
+            font-weight: 800; 
+            color: var(--primary); 
+            margin-bottom: 2.5rem; 
+            display: flex; 
+            align-items: center; 
+            gap: 0.75rem;
+            text-decoration: none;
+        }
+        
+        .nav-group { margin-bottom: 2.5rem; }
+        .nav-title { 
+            font-size: 0.7rem; 
+            font-weight: 800; 
+            text-transform: uppercase; 
+            color: var(--text-muted); 
+            letter-spacing: 0.1em; 
+            margin-bottom: 1rem; 
+            padding-left: 0.5rem;
+        }
+        .nav-link { 
+            display: block; 
+            padding: 0.6rem 1rem; 
+            color: var(--text-main); 
+            text-decoration: none; 
+            font-size: 0.9rem; 
+            font-weight: 500;
+            border-radius: 0.5rem;
+            transition: all 0.2s; 
+            margin-bottom: 0.25rem;
+        }
+        .nav-link:hover { background: var(--primary-light); color: var(--primary); }
+        .nav-link.active { background: var(--primary); color: white; }
 
         /* Content */
-        .content { flex: 1; padding: 3rem 4rem; max-width: 1000px; }
-        section { margin-bottom: 4rem; scroll-margin-top: 2rem; }
-        h1 { font-size: 2.5rem; font-weight: 800; margin-bottom: 1.5rem; letter-spacing: -0.02em; }
-        h2 { font-size: 1.75rem; font-weight: 700; margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
-        h3 { font-size: 1.25rem; font-weight: 600; margin-top: 2rem; margin-bottom: 0.75rem; }
-        p { margin-bottom: 1.25rem; color: #475569; }
-
-        /* Badges */
-        .method { font-size: 0.75rem; font-weight: 700; padding: 0.25rem 0.5rem; border-radius: 0.375rem; margin-right: 0.5rem; color: white; }
-        .post { background: #2563eb; }
-        .get { background: #059669; }
-
-        /* Code Blocks */
-        pre[class*="language-"] { border-radius: 0.75rem; margin: 1.5rem 0; font-size: 0.9rem; }
+        .content { flex: 1; padding: 4rem 5rem; max-width: 1100px; }
+        section { margin-bottom: 6rem; scroll-margin-top: 4rem; }
         
+        h1 { font-size: 3rem; font-weight: 800; margin-bottom: 1.5rem; letter-spacing: -0.03em; color: #0f172a; }
+        h2 { font-size: 2rem; font-weight: 700; margin-bottom: 1.5rem; color: #0f172a; border-bottom: 1px solid var(--border); padding-bottom: 0.75rem; margin-top: 3rem; }
+        h3 { font-size: 1.25rem; font-weight: 700; margin-top: 2.5rem; margin-bottom: 1rem; color: #334155; }
+        p { margin-bottom: 1.5rem; color: #475569; font-size: 1.05rem; }
+
+        /* Method Badges */
+        .method { font-size: 0.7rem; font-weight: 800; padding: 0.3rem 0.6rem; border-radius: 0.4rem; margin-right: 0.75rem; color: white; text-transform: uppercase; }
+        .post { background: var(--primary); }
+        .get { background: var(--success); }
+        .delete { background: var(--error); }
+
+        /* Components */
         .endpoint-card {
             background: white;
             border: 1px solid var(--border);
-            border-radius: 1rem;
-            padding: 2rem;
-            margin-bottom: 2rem;
-            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05);
+            border-radius: 1.25rem;
+            padding: 2.5rem;
+            margin-bottom: 2.5rem;
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.04);
         }
 
-        .endpoint-header { display: flex; align-items: center; margin-bottom: 1rem; font-family: monospace; font-size: 1.1rem; }
+        .endpoint-header { 
+            display: flex; 
+            align-items: center; 
+            margin-bottom: 1.5rem; 
+            font-family: 'JetBrains Mono', monospace; 
+            font-size: 1.15rem;
+            font-weight: 600;
+        }
         
-        table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; font-size: 0.9rem; }
-        th { text-align: left; padding: 0.75rem; border-bottom: 2px solid var(--border); color: var(--text-muted); }
-        td { padding: 0.75rem; border-bottom: 1px solid var(--border); }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
 
-        .tag { font-size: 0.7rem; background: #f1f5f9; padding: 0.2rem 0.5rem; border-radius: 1rem; color: var(--text-muted); }
+        table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; font-size: 0.95rem; }
+        th { text-align: left; padding: 1rem; border-bottom: 2px solid var(--border); color: var(--text-muted); font-weight: 700; }
+        td { padding: 1rem; border-bottom: 1px solid var(--border); vertical-align: top; }
 
-        @media (max-width: 768px) {
-            .layout { flex-direction: column; }
-            .sidebar { width: 100%; height: auto; position: static; }
+        .type-tag { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--primary); background: var(--primary-light); padding: 0.2rem 0.5rem; border-radius: 0.4rem; }
+        .required-tag { color: var(--error); font-size: 0.75rem; font-weight: 700; margin-left: 0.5rem; }
+        .plan-tag { 
+            font-size: 0.65rem; 
+            font-weight: 800; 
+            padding: 0.2rem 0.5rem; 
+            border-radius: 1rem; 
+            margin-left: 0.5rem;
+            text-transform: uppercase;
+        }
+        .tag-free { background: #f1f5f9; color: #64748b; }
+        .tag-pro { background: #dcfce7; color: #15803d; }
+        .tag-ultra { background: #fef9c3; color: #a16207; }
+        .tag-mega { background: #ede9fe; color: #7c3aed; }
+
+        /* Code Blocks */
+        pre[class*="language-"] { border-radius: 1rem !important; margin: 1.5rem 0 !important; background: var(--code-bg) !important; padding: 1.5rem !important; }
+        code { font-family: 'JetBrains Mono', monospace !important; }
+
+        .tab-group { margin-bottom: 2rem; }
+        .tab-buttons { display: flex; gap: 1rem; border-bottom: 1px solid var(--border); margin-bottom: 1rem; }
+        .tab-btn { padding: 0.5rem 1rem; border: none; background: none; cursor: pointer; font-weight: 600; color: var(--text-muted); border-bottom: 2px solid transparent; transition: all 0.2s; }
+        .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+        @media (max-width: 1024px) {
+            .grid { grid-template-columns: 1fr; }
+            .sidebar { display: none; }
             .content { padding: 2rem; }
         }
     </style>
@@ -884,131 +953,210 @@ MODERN_DOCS_HTML = """
 <body>
     <div class="layout">
         <aside class="sidebar">
-            <div class="logo"><span>🚀</span> PageIQ</div>
+            <a href="/" class="logo"><span>🚀</span> PageIQ</a>
             
             <nav class="nav-group">
-                <div class="nav-title">Getting Started</div>
-                <a href="#introduction" class="nav-link">Introduction</a>
+                <div class="nav-title">Introduction</div>
+                <a href="#welcome" class="nav-link">Welcome</a>
+                <a href="#getting-started" class="nav-link">Quick Start</a>
                 <a href="#authentication" class="nav-link">Authentication</a>
-                <a href="#errors" class="nav-link">Error Handling</a>
             </nav>
 
             <nav class="nav-group">
                 <div class="nav-title">Endpoints</div>
                 <a href="#analyze" class="nav-link">Website Analysis</a>
-                <a href="#extract" class="nav-link">Data Extraction</a>
-                <a href="#seo" class="nav-link">SEO Audit</a>
+                <a href="#extract-emails" class="nav-link">Email Extraction</a>
+                <a href="#seo-audit" class="nav-link">SEO Audit</a>
                 <a href="#health" class="nav-link">System Health</a>
             </nav>
 
             <nav class="nav-group">
-                <div class="nav-title">Tools</div>
+                <div class="nav-title">Guides</div>
+                <a href="#anti-bot" class="nav-link">Anti-Bot Evasion</a>
+                <a href="#rate-limits" class="nav-link">Rate Limits & Quota</a>
                 <a href="/tests" class="nav-link">Interactive Tester ↗</a>
             </nav>
         </aside>
 
         <main class="content">
-            <section id="introduction">
-                <h1>API Documentation</h1>
-                <p>PageIQ is a powerful website intelligence engine that transforms any URL into structured, actionable business data. Built for developers, our API provides comprehensive tools for metadata extraction, contact discovery, SEO auditing, and technology stack detection.</p>
-                <div class="endpoint-card" style="background: #eef2ff; border-color: #c7d2fe;">
-                    <h3 style="margin-top:0">Key Features</h3>
-                    <ul style="margin-left: 1.5rem; color: #4338ca;">
-                        <li>Headless Browser Rendering (Playwright)</li>
-                        <li>Advanced Anti-Bot Evasion</li>
-                        <li>Deep Email & Contact Crawling</li>
-                        <li>Detailed SEO Performance Auditing</li>
-                        <li>Technology & CMS Detection</li>
-                    </ul>
+            <section id="welcome">
+                <h1>The Website Intelligence Engine</h1>
+                <p>PageIQ is a high-performance API designed for developers, marketers, and lead-gen agencies. It transforms any URL into structured data, covering everything from basic metadata to deep technology stacks and verified contact details.</p>
+                
+                <div class="grid">
+                    <div class="endpoint-card" style="background: var(--primary-light); border-color: #c7d2fe;">
+                        <h3 style="margin-top:0">Why developers choose us</h3>
+                        <ul style="margin-left: 1.5rem; color: #4338ca; margin-top: 1rem;">
+                            <li><strong>Headless Chrome:</strong> Render React/Vue/SPA apps.</li>
+                            <li><strong>Stealth Mode:</strong> Bypass Cloudflare & Bot-detectors.</li>
+                            <li><strong>Global Scale:</strong> 99.9% Uptime with RapidAPI.</li>
+                            <li><strong>Weighted SEO:</strong> Real audit scores, not random numbers.</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <section id="getting-started">
+                <h2>Quick Start</h2>
+                <p>Start extracting data in seconds using your preferred language.</p>
+                
+                <div class="tab-group">
+                    <div class="tab-buttons">
+                        <button class="tab-btn active">cURL</button>
+                        <button class="tab-btn">Node.js</button>
+                        <button class="tab-btn">Python</button>
+                    </div>
+                    <div class="tab-content">
+                        <pre><code class="language-bash">curl -X POST "https://pageiq.pompora.dev/api/v1/analyze" \\
+     -H "X-API-Key: YOUR_API_KEY" \\
+     -H "Content-Type: application/json" \\
+     -d '{"url": "https://mikso.net", "use_browser": true}'</code></pre>
+                    </div>
                 </div>
             </section>
 
             <section id="authentication">
                 <h2>Authentication</h2>
-                <p>Authenticate your requests by including your API Key in the <code>X-API-Key</code> header.</p>
-                <pre><code class="language-http">GET /api/v1/analyze HTTP/1.1
+                <p>All API requests require an API key passed in the <code>X-API-Key</code> header. You can obtain your key from the PageIQ dashboard or RapidAPI portal.</p>
+                <div class="endpoint-card">
+                    <pre><code class="language-http">GET /api/v1/ping HTTP/1.1
 Host: pageiq.pompora.dev
-X-API-Key: your_api_key_here</code></pre>
+X-API-Key: piq_live_xxxxxxxxxxxxxxxxxxxx</code></pre>
+                </div>
             </section>
 
             <section id="analyze">
                 <h2>Website Analysis</h2>
-                <p>The core analysis engine that extracts metadata, social profiles, and technical details.</p>
+                <p>Our flagship endpoint. It performs a deep dive into any URL, extracting metadata, social links, logos, contact info, and the full technology stack.</p>
                 
                 <div class="endpoint-card">
                     <div class="endpoint-header">
                         <span class="method post">POST</span> /api/v1/analyze
                     </div>
-                    <p>Perform a comprehensive analysis of a single URL.</p>
                     
-                    <h3>Parameters</h3>
+                    <h3>Request Body</h3>
                     <table>
                         <thead>
-                            <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+                            <tr><th>Field</th><th>Type</th><th>Default</th><th>Description</th></tr>
                         </thead>
                         <tbody>
-                            <tr><td>url</td><td>string</td><td>The target website URL (required).</td></tr>
-                            <tr><td>use_browser</td><td>boolean</td><td>Enable JS rendering for SPA/React apps. <span class="tag">PRO+</span></td></tr>
-                            <tr><td>screenshot</td><td>boolean</td><td>Capture a full-page screenshot.</td></tr>
+                            <tr>
+                                <td>url <span class="required-tag">Required</span></td>
+                                <td><span class="type-tag">string</span></td>
+                                <td>-</td>
+                                <td>The target website URL.</td>
+                            </tr>
+                            <tr>
+                                <td>use_browser</td>
+                                <td><span class="type-tag">boolean</span></td>
+                                <td>false</td>
+                                <td>Enable Playwright rendering. Required for SPAs. <span class="plan-tag tag-pro">PRO+</span></td>
+                            </tr>
+                            <tr>
+                                <td>screenshot</td>
+                                <td><span class="type-tag">boolean</span></td>
+                                <td>false</td>
+                                <td>Capture full-page screenshot and return URL.</td>
+                            </tr>
+                            <tr>
+                                <td>ai_summary</td>
+                                <td><span class="type-tag">boolean</span></td>
+                                <td>false</td>
+                                <td>Generate an AI-powered business summary. <span class="plan-tag tag-ultra">ULTRA+</span></td>
+                            </tr>
                         </tbody>
                     </table>
 
-                    <h3>Example Request</h3>
+                    <h3>Example Response</h3>
                     <pre><code class="language-json">{
-  "url": "https://mikso.net",
-  "use_browser": true,
-  "screenshot": true
+  "success": true,
+  "data": {
+    "url": "https://mikso.net",
+    "metadata": {
+      "title": "Mikso | Web Design & SEO",
+      "description": "Transforming ideas into online success..."
+    },
+    "contacts": {
+      "emails": ["hello@mikso.net"],
+      "phones": ["+1-xxx-xxx-xxxx"]
+    },
+    "tech_stack": ["React", "Next.js", "Tailwind CSS"],
+    "seo_score": 92
+  }
 }</code></pre>
                 </div>
             </section>
 
-            <section id="extract">
-                <h2>Data Extraction</h2>
-                <p>Specialized endpoints for deep data discovery.</p>
+            <section id="extract-emails">
+                <h2>Email Extraction</h2>
+                <p>Discover contact details across an entire domain. Unlike simple scraping, PageIQ uses smart heuristics to find hidden emails in footers, contact pages, and scripts.</p>
                 
                 <div class="endpoint-card">
                     <div class="endpoint-header">
                         <span class="method post">POST</span> /api/v1/extract/emails
                     </div>
-                    <p>Discover email addresses. Supports deep crawling of internal pages.</p>
                     
-                    <h3>Options</h3>
+                    <h3>Premium Options</h3>
                     <table>
                         <thead>
-                            <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+                            <tr><th>Option</th><th>Type</th><th>Max</th><th>Plan</th></tr>
                         </thead>
                         <tbody>
-                            <tr><td>deep_search</td><td>boolean</td><td>Crawl internal pages for more emails. <span class="tag">PRO+</span></td></tr>
-                            <tr><td>pages_limit</td><td>integer</td><td>Max pages to crawl (up to 500). <span class="tag">MEGA</span></td></tr>
+                            <tr>
+                                <td>deep_search</td>
+                                <td><span class="type-tag">boolean</span></td>
+                                <td>-</td>
+                                <td><span class="plan-tag tag-pro">PRO+</span></td>
+                            </tr>
+                            <tr>
+                                <td>pages_limit</td>
+                                <td><span class="type-tag">integer</span></td>
+                                <td>500</td>
+                                <td><span class="plan-tag tag-mega">MEGA</span></td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
             </section>
 
-            <section id="seo">
+            <section id="seo-audit">
                 <h2>SEO Audit</h2>
-                <p>Get professional SEO insights and scores for any webpage.</p>
+                <p>Get professional, weighted SEO scores (1-100) based on Google's Core Web Vitals and industry best practices. We don't just count tags; we analyze hierarchy, mobile-friendliness, and technical health.</p>
                 
                 <div class="endpoint-card">
                     <div class="endpoint-header">
                         <span class="method post">POST</span> /api/v1/seo/seo-audit
                     </div>
-                    <p>Returns a weighted SEO score (1-100) and detailed improvement advice.</p>
+                    <p>Returns a comprehensive audit including:</p>
+                    <ul style="margin-left: 1.5rem; margin-top: 1rem; color: #475569;">
+                        <li>Content Hierarchy (H1-H3 checks)</li>
+                        <li>Meta Tag Optimization</li>
+                        <li>Image Alt Attribute Ratios</li>
+                        <li>Mobile Viewport Configuration</li>
+                        <li>SSL & Security Status</li>
+                    </ul>
                 </div>
             </section>
 
-            <section id="health">
-                <h2>System Health</h2>
-                <div class="endpoint-card">
-                    <div class="endpoint-header">
-                        <span class="method get">GET</span> /api/v1/ping
-                    </div>
-                    <p>Returns <code>{"status": "ok"}</code> if the service is operational.</p>
-                </div>
+            <section id="rate-limits">
+                <h2>Rate Limits & Quota</h2>
+                <p>Each plan comes with a specific monthly quota. One request to any endpoint typically consumes 1 credit. Deep crawls consume credits per page visited.</p>
+                <table>
+                    <thead>
+                        <tr><th>Plan</th><th>Monthly Credits</th><th>Rate Limit</th><th>Key Features</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>Free</td><td>50</td><td>10 req/min</td><td>Basic Analysis</td></tr>
+                        <tr><td>Pro</td><td>5,000</td><td>60 req/min</td><td>Deep Search, JS Rendering</td></tr>
+                        <tr><td>Ultra</td><td>25,000</td><td>150 req/min</td><td>AI Summary, Screenshots</td></tr>
+                        <tr><td>Mega</td><td>100,000</td><td>500 req/min</td><td>Bulk Crawling, Webhooks</td></tr>
+                    </tbody>
+                </table>
             </section>
 
-            <footer style="margin-top: 8rem; padding-top: 2rem; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 0.8rem;">
-                &copy; 2026 PageIQ Intelligence Engine. All rights reserved.
+            <footer style="margin-top: 8rem; padding-top: 3rem; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 0.9rem; text-align: center;">
+                <p>&copy; 2026 PageIQ Website Intelligence. Built for the modern web.</p>
+                <p style="margin-top: 0.5rem; font-size: 0.8rem;">Powered by Playwright, BeautifulSoup, and Wappalyzer.</p>
             </footer>
         </main>
     </div>
@@ -1016,6 +1164,7 @@ X-API-Key: your_api_key_here</code></pre>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-http.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
 </body>
 </html>
 """
