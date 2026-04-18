@@ -85,6 +85,47 @@ class TechStackDetector:
             'Cloudflare': {
                 'headers': ['server', 'cf-ray'],
             },
+            'HubSpot': {
+                'html': [r'hubspot', r'hs-script'],
+                'scripts': [r'js\.hs-scripts\.com', r'js\.hsadspixel\.net', r'js\.hs-analytics\.net'],
+            },
+            'Salesforce': {
+                'html': [r'salesforce', r'sf-'],
+                'scripts': [r'force\.com'],
+            },
+            'Intercom': {
+                'scripts': [r'widget\.intercom\.io'],
+            },
+            'Zendesk': {
+                'scripts': [r'static\.zdassets\.com', r'zendesk\.com'],
+            },
+            'Stripe': {
+                'scripts': [r'js\.stripe\.com'],
+            },
+            'Google Analytics': {
+                'scripts': [r'google-analytics\.com', r'googletagmanager\.com/gtag/js', r'ua-'],
+                'html': [r'gtag'],
+            },
+            'Facebook Pixel': {
+                'scripts': [r'connect\.facebook\.net/en_US/fbevents\.js'],
+                'html': [r'fbq'],
+            },
+            'Hotjar': {
+                'scripts': [r'static\.hotjar\.com'],
+            },
+            'Mailchimp': {
+                'html': [r'mailchimp'],
+                'scripts': [r'chimpstatic\.com'],
+            },
+            'Segment': {
+                'scripts': [r'cdn\.segment\.com'],
+            },
+            'Mixpanel': {
+                'scripts': [r'cdn\.mxpnl\.com'],
+            },
+            'Sentry': {
+                'scripts': [r'browser\.sentry-cdn\.com'],
+            },
             'AWS': {
                 'headers': ['server', 'x-amz-'],
             },
@@ -130,12 +171,21 @@ class TechStackDetector:
 
             # Check script tags
             if 'scripts' in fingerprints:
-                scripts = soup.find_all('script', {'src': True})
+                scripts = soup.find_all('script')
                 for script in scripts:
                     src = script.get('src', '')
+                    # Check src attribute
                     for pattern in fingerprints['scripts']:
-                        if re.search(pattern, src, re.IGNORECASE):
-                            confidence += 2  # Scripts are strong indicators
+                        if src and re.search(pattern, src, re.IGNORECASE):
+                            confidence += 2
+                    
+                    # Check inline script content if small enough
+                    if not src and script.string:
+                        content = script.string
+                        if len(content) < 1000: # Only check small inline scripts for performance
+                            for pattern in fingerprints['scripts']:
+                                if re.search(pattern, content, re.IGNORECASE):
+                                    confidence += 1
 
             # Check CSS links
             if 'css' in fingerprints:

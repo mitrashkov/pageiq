@@ -231,9 +231,25 @@ def extract_emails(soup: BeautifulSoup) -> List[str]:
 
     # Extract from text content
     text_content = soup.get_text()
+    # Also search in the raw HTML string as emails are often in scripts, JSON-LD, or data attributes
+    raw_html = str(soup)
+    
     email_pattern = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
+    
+    # Combine search results from text and raw HTML
     found_emails = re.findall(email_pattern, text_content, re.IGNORECASE)
-    for email in found_emails:
+    found_emails_raw = re.findall(email_pattern, raw_html, re.IGNORECASE)
+    
+    # Advanced: Look for obfuscated emails (e.g., info [at] example.com)
+    obfuscated_pattern = r'\b[A-Za-z0-9._%+-]+\s*[\(\[]\s*at\s*[\)\]]\s*[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
+    found_obfuscated = re.findall(obfuscated_pattern, text_content, re.IGNORECASE)
+    for email in found_obfuscated:
+        # Clean the obfuscated email
+        cleaned = re.sub(r'\s*[\(\[]\s*at\s*[\)\]]\s*', '@', email, flags=re.I)
+        if _validate_email(cleaned):
+            emails.add(cleaned.lower())
+
+    for email in set(found_emails + found_emails_raw):
         if _validate_email(email):
             emails.add(email.lower())
 

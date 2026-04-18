@@ -61,6 +61,7 @@ async def extract_emails_endpoint(
     options = validate_options_input(request.options)
     
     deep_search = bool(options.get("deep_search", False))
+    use_browser = bool(options.get("use_browser", False))
     pages_limit = min(int(options.get("pages_limit", 10)), 20)  # Cap at 20 pages for performance
     
     # Plan check: Deep search is only for Pro, Ultra, and Mega plans
@@ -86,10 +87,19 @@ async def extract_emails_endpoint(
             # PRO: 50/Month quota, deep crawl up to 50 pages
             pages_limit = min(int(options.get("pages_limit", 20)), 50)
 
+    # JS Rendering check
+    if use_browser:
+        user_plan = getattr(user, "plan", "free").lower()
+        if user_plan not in ["ultra", "mega"]:
+            raise HTTPException(
+                status_code=403,
+                detail=f"JavaScript Rendering (use_browser) is an ULTRA/MEGA feature. Current plan: {user_plan.upper()}"
+            )
+
     try:
         if deep_search:
             # Deep search across multiple pages
-            emails = await email_crawler.crawl_website(url, max_pages=pages_limit)
+            emails = await email_crawler.crawl_website(url, max_pages=pages_limit, use_browser=use_browser)
         else:
             # Standard single-page extraction
             # Check robots.txt
@@ -99,8 +109,8 @@ async def extract_emails_endpoint(
                     detail="Crawling not allowed by robots.txt"
                 )
             
-            # Fetch HTML
-            html_content, error, _ = html_fetcher.fetch_html(url)
+            # Fetch HTML asynchronously (supports browser)
+            html_content, error, _ = await html_fetcher.fetch_html_async(url, use_browser=use_browser)
             if error or not html_content:
                 raise HTTPException(
                     status_code=400,
@@ -178,8 +188,9 @@ async def extract_schema_endpoint(
                 detail="Crawling not allowed by robots.txt"
             )
         
-        # Fetch HTML
-        html_content, error, _ = html_fetcher.fetch_html(url)
+        # Fetch HTML asynchronously (supports browser)
+        use_browser = bool(options.get("use_browser", False))
+        html_content, error, _ = await html_fetcher.fetch_html_async(url, use_browser=use_browser)
         if error or not html_content:
             raise HTTPException(
                 status_code=400,
@@ -259,8 +270,9 @@ async def extract_metadata_endpoint(
                 detail="Crawling not allowed by robots.txt"
             )
         
-        # Fetch HTML
-        html_content, error, _ = html_fetcher.fetch_html(url)
+        # Fetch HTML asynchronously (supports browser)
+        use_browser = bool(options.get("use_browser", False))
+        html_content, error, _ = await html_fetcher.fetch_html_async(url, use_browser=use_browser)
         if error or not html_content:
             raise HTTPException(
                 status_code=400,

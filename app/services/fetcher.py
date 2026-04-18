@@ -55,7 +55,19 @@ class HTMLFetcher:
 
         return session
 
-    def fetch_html(self, url: str, timeout: int = 30, use_browser: bool = False) -> Tuple[Optional[str], Optional[str], Dict[str, str]]:
+    async def fetch_html_async(self, url: str, timeout: int = 30, use_browser: bool = False) -> Tuple[Optional[str], Optional[str], Dict[str, str]]:
+        """
+        Asynchronous version of fetch_html that supports browser rendering.
+        """
+        if use_browser:
+            from app.services.browser import browser_service
+            async with browser_service as browser:
+                return await browser.fetch_page(url, timeout=timeout * 1000)
+        
+        # Fallback to synchronous fetch in a thread for non-browser requests
+        return await asyncio.to_thread(self.fetch_html, url, timeout)
+
+    def fetch_html(self, url: str, timeout: int = 30) -> Tuple[Optional[str], Optional[str], Dict[str, str]]:
         """
         Fetch HTML content from a URL with anti-bot evasion.
 

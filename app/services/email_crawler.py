@@ -23,7 +23,7 @@ class EmailCrawler:
         self.emails: Set[str] = set()
         self.base_domain = ""
 
-    async def crawl_website(self, start_url: str, max_pages: Optional[int] = None) -> List[str]:
+    async def crawl_website(self, start_url: str, max_pages: Optional[int] = None, use_browser: bool = False) -> List[str]:
         """
         Crawl a website starting from start_url and extract emails from all visited pages.
         Supports high-volume crawling (500+ pages) with concurrency.
@@ -64,7 +64,7 @@ class EmailCrawler:
                 self.visited_urls.add(url)
                 try:
                     # Fetch with a slightly longer timeout for deep crawls
-                    html, error, _ = await asyncio.to_thread(html_fetcher.fetch_html, url, self.timeout)
+                    html, error, _ = await html_fetcher.fetch_html_async(url, timeout=self.timeout, use_browser=use_browser)
                     if error or not html:
                         return []
 
