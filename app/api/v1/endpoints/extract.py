@@ -40,6 +40,14 @@ class ExtractEmailsResponse(BaseModel):
     processing_time_ms: int
 
 
+class ExtractSchemaResponse(BaseModel):
+    """Response model for schema extraction"""
+    url: str
+    schema_org: Optional[Dict[str, Any]]
+    timestamp: float
+    processing_time_ms: int
+
+
 @router.post("/emails", response_model=ExtractEmailsResponse)
 async def extract_emails_endpoint(
     request: ExtractEmailsRequest,
@@ -148,6 +156,49 @@ async def extract_emails_endpoint(
             status_code=500,
             detail=f"Error extracting emails: {str(e)}"
         )
+
+
+@router.post("/schema", response_model=ExtractSchemaResponse)
+async def extract_schema_endpoint(
+    request: ExtractEmailsRequest, # Reuse model for URL/options
+    user: User = Depends(get_optional_user),
+):
+    """
+    Extract Schema.org structured data from a website.
+    
+    This endpoint finds and parses JSON-LD or Microdata structured content.
+    """
+    start_time = time.time()
+    url = str(validate_url_input(str(request.url)))
+    options = validate_options_input(request.options)
+    use_browser = bool(options.get("use_browser", False))
+    
+    try:
+        # Fetch HTML asynchronously
+        html_content, error, _ = await html_fetcher.fetch_html_async(url, use_browser=use_browser)
+        if error or not html_content:
+            raise HTTPException(status_code=400, detail=f"Failed to fetch webpage: {error}")
+            
+        # Parse HTML
+        soup = html_fetcher.parse_html(html_content)
+        if soup is None:
+            raise HTTPException(status_code=400, detail="Failed to parse HTML content")
+            
+        # Extract Schema
+        schema_data = extract_schema_org(soup)
+        
+        processing_time_ms = int((time.time() - start_time) * 1000)
+        
+        return ExtractSchemaResponse(
+            url=url,
+            schema_org=schema_data,
+            timestamp=time.time(),
+            processing_time_ms=processing_time_ms
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error extracting schema: {str(e)}")
 
 
 class ExtractSchemaRequest(BaseModel):

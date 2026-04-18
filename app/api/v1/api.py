@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from app.api.v1.endpoints import analyze, analytics, health, extract, seo, billing
+from app.api.v1.endpoints import analyze, analytics, health, extract, seo, billing, docs
 
 api_router = APIRouter()
 
@@ -11,6 +11,7 @@ api_router.include_router(analytics.router, prefix="/analytics", tags=["analytic
 api_router.include_router(extract.router, prefix="/extract", tags=["extraction"])
 api_router.include_router(seo.router, prefix="/seo", tags=["seo"])
 api_router.include_router(billing.router, prefix="/account", tags=["billing"])
+api_router.include_router(docs.router, prefix="/docs", tags=["documentation"])
 
 # Add direct /ping endpoint for compatibility with monitoring tools
 @api_router.api_route("/ping", methods=["GET", "HEAD"], tags=["health"], include_in_schema=False)

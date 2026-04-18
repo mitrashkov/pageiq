@@ -106,7 +106,7 @@ app.add_middleware(MetricsMiddleware)
 # Include API router with versioning
 app.include_router(api_router, prefix=settings.API_V1_STR)
 
-# Include docs and tests endpoints at root level
+# Serve documentation at root level too
 from app.api.v1.endpoints import docs
 app.include_router(docs.router)
 

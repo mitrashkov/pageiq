@@ -1,5 +1,6 @@
 import time
 import uuid
+from typing import List
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from bs4 import BeautifulSoup
@@ -34,6 +35,13 @@ class AnalyzeRequest(BaseModel):
         # Validate inputs
         self.url = validate_url_input(self.url)
         self.options = validate_options_input(self.options)
+
+class TechDetectionResponse(BaseModel):
+    """Response model for tech detection"""
+    url: str
+    technologies: List[str]
+    timestamp: float
+    processing_time_ms: int
 
 @router.post("")
 async def analyze_website(
@@ -112,6 +120,48 @@ async def analyze_website(
             status_code=500,
             detail=f"Analysis failed: {str(e)}"
         )
+
+
+@router.post("/tech", response_model=TechDetectionResponse)
+async def detect_tech_endpoint(
+    request: AnalyzeRequest,
+    user: User = Depends(get_optional_user),
+):
+    """
+    Detect technology stack, CMS, and tracking pixels for a website.
+    """
+    start_time = time.time()
+    url = str(validate_url_input(str(request.url)))
+    options = validate_options_input(request.options)
+    use_browser = bool(options.get("use_browser", False))
+    
+    try:
+        # Fetch HTML
+        html_content, error, headers = await html_fetcher.fetch_html_async(url, use_browser=use_browser)
+        if error or not html_content:
+            raise HTTPException(status_code=400, detail=f"Failed to fetch webpage: {error}")
+            
+        # Parse HTML
+        soup = html_fetcher.parse_html(html_content)
+        if soup is None:
+            raise HTTPException(status_code=400, detail="Failed to parse HTML content")
+            
+        # Detect Tech
+        from app.services.tech_detector import tech_detector
+        tech_stack = tech_detector.detect_technologies(soup, html_content, headers)
+        
+        processing_time_ms = int((time.time() - start_time) * 1000)
+        
+        return TechDetectionResponse(
+            url=url,
+            technologies=tech_stack,
+            timestamp=time.time(),
+            processing_time_ms=processing_time_ms
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error detecting tech: {str(e)}")
 
 
 @router.options("")
