@@ -69,7 +69,7 @@ class EmailCrawler:
                         return []
 
                     soup = html_fetcher.parse_html(html)
-                    if not soup:
+                    if soup is None:
                         return []
 
                     page_emails = extract_emails(soup)

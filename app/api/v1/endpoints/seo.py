@@ -333,10 +333,10 @@ async def seo_audit_endpoint(
         
         # Parse HTML
         soup = html_fetcher.parse_html(html_content)
-        if not soup:
+        if soup is None:
             raise HTTPException(
                 status_code=400,
-                detail="Failed to parse HTML content"
+                detail="Failed to parse HTML content. The website might be using a non-standard format."
             )
         
         # Run all SEO checks
@@ -429,10 +429,10 @@ async def broken_links_endpoint(
         
         # Parse HTML
         soup = html_fetcher.parse_html(html_content)
-        if not soup:
+        if soup is None:
             raise HTTPException(
                 status_code=400,
-                detail="Failed to parse HTML content"
+                detail="Failed to parse HTML content. The website might be using a non-standard format."
             )
         
         # Extract all links

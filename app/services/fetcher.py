@@ -143,6 +143,7 @@ class HTMLFetcher:
     def parse_html(self, html_content: str) -> Optional[BeautifulSoup]:
         """
         Parse HTML content with BeautifulSoup.
+        Uses lxml for speed and robustness, with fallback to html.parser.
 
         Args:
             html_content: Raw HTML string
@@ -150,19 +151,31 @@ class HTMLFetcher:
         Returns:
             BeautifulSoup object or None if parsing fails
         """
+        if not html_content or not isinstance(html_content, str):
+            return None
+
         try:
-            # Quick sanity check: if markup seems malformed, treat as parse failure.
-            # (BeautifulSoup is very forgiving; tests expect None for clearly broken input.)
-            if html_content.count("<") != html_content.count(">"):
-                return None
-            soup = BeautifulSoup(html_content, 'html.parser')
-            # If we have no meaningful tags at all, treat as failure.
-            if soup.find() is None:
-                return None
+            # Try parsing with lxml first (fastest and most robust)
+            soup = BeautifulSoup(html_content, 'lxml')
+            
+            # If lxml results in an empty soup (no tags), try html.parser as fallback
+            if not soup.find():
+                soup = BeautifulSoup(html_content, 'html.parser')
+                
+            # Final check: do we have ANY tags?
+            if not soup.find():
+                # If still no tags, it might just be a plain text page.
+                # We'll return the soup anyway so extractors can still look at text_content
+                return soup
+                
             return soup
         except Exception as e:
-            logger.error(f"Failed to parse HTML: {str(e)}")
-            return None
+            logger.error(f"Failed to parse HTML with lxml/html.parser: {str(e)}")
+            try:
+                # Last resort fallback
+                return BeautifulSoup(html_content, 'html.parser')
+            except Exception:
+                return None
 
 
 # Global instance

@@ -109,10 +109,10 @@ async def extract_emails_endpoint(
             
             # Parse HTML
             soup = html_fetcher.parse_html(html_content)
-            if not soup:
+            if soup is None:
                 raise HTTPException(
                     status_code=400,
-                    detail="Failed to parse HTML content"
+                    detail="Failed to parse HTML content. The website might be using a non-standard format."
                 )
             
             # Extract emails
@@ -188,10 +188,10 @@ async def extract_schema_endpoint(
         
         # Parse HTML
         soup = html_fetcher.parse_html(html_content)
-        if not soup:
+        if soup is None:
             raise HTTPException(
                 status_code=400,
-                detail="Failed to parse HTML content"
+                detail="Failed to parse HTML content. The website might be using a non-standard format."
             )
         
         # Extract schema.org data
@@ -269,10 +269,10 @@ async def extract_metadata_endpoint(
         
         # Parse HTML
         soup = html_fetcher.parse_html(html_content)
-        if not soup:
+        if soup is None:
             raise HTTPException(
                 status_code=400,
-                detail="Failed to parse HTML content"
+                detail="Failed to parse HTML content. The website might be using a non-standard format."
             )
         
         # Extract all metadata
