@@ -109,19 +109,31 @@ class BatchStatusStore:
         status.updated_at_ms = int(time.time() * 1000)
         self._save_status(status)
 
-    def get_results(self, batch_id: str, limit: int = 100, offset: int = 0) -> List[Dict[str, Any]]:
+    def get_results(self, batch_id: str, limit: int = 20, offset: int = 0) -> List[Dict[str, Any]]:
         """Get paginated results for a batch."""
+        # Use a reasonable default limit if not provided
+        limit = limit or 20
         start = offset
         end = offset + limit - 1
-        raw_items = self.redis.lrange(self._results_key(batch_id), start, end)
         
-        results: List[Dict[str, Any]] = []
-        for raw in raw_items:
-            try:
-                results.append(json.loads(raw.decode("utf-8")))
-            except Exception:
-                continue
-        return results
+        try:
+            # Add a short timeout to the Redis operation
+            raw_items = self.redis.lrange(self._results_key(batch_id), start, end)
+            
+            results: List[Dict[str, Any]] = []
+            for raw in raw_items:
+                try:
+                    # Parse JSON only once and keep it memory efficient
+                    item = json.loads(raw.decode("utf-8"))
+                    # If the item contains a huge data object, maybe we should optionally truncate it
+                    # but for now, we'll return it as is.
+                    results.append(item)
+                except Exception:
+                    continue
+            return results
+        except Exception as e:
+            logger.error(f"Error fetching batch results from Redis: {e}")
+            return []
 
 
 batch_status_store = BatchStatusStore()

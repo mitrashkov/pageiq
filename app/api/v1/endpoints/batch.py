@@ -93,7 +93,7 @@ async def batch_analyze_websites(
 async def get_batch_status(
     batch_id: str,
     page: int = 1,
-    page_size: int = 50,
+    page_size: int = 20, # Reduced default page size to avoid 502/Network errors
     user: User = Depends(get_optional_user),
     db: Session = Depends(get_db)
 ):
@@ -105,7 +105,7 @@ async def get_batch_status(
         raise HTTPException(status_code=404, detail="Batch not found")
 
     # Pagination for results
-    limit = min(page_size, 100)
+    limit = min(page_size, 50) # Cap page size at 50
     offset = (page - 1) * limit
     
     results = []

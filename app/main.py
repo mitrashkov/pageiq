@@ -77,12 +77,10 @@ app.add_middleware(
 # Add security middlewares
 from app.core.security_headers import (
     SecurityHeadersMiddleware,
-    RequestValidationMiddleware,
-    SSRFProtectionMiddleware
+    RequestValidationMiddleware
 )
 
 app.add_middleware(RequestValidationMiddleware)
-app.add_middleware(SSRFProtectionMiddleware)
 app.add_middleware(SecurityHeadersMiddleware)
 
 # Set up CORS

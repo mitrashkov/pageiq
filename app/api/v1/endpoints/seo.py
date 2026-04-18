@@ -296,7 +296,7 @@ def check_structured_data(soup, base_url: str) -> SEOAuditItem:
 
 def check_open_graph(soup, base_url: str) -> SEOAuditItem:
     """Check if Open Graph tags are present"""
-    og_tags = extract_open_graph(soup)
+    og_tags = extract_open_graph(soup) or {}
     
     required = ['title', 'description', 'image', 'url']
     found = [tag for tag in required if tag in og_tags]
