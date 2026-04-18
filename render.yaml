@@ -1,12 +1,12 @@
 services:
   - type: web
     name: pageiq-api
-    runtime: python
-    buildCommand: pip install --no-cache-dir -r requirements.txt && playwright install --with-deps chromium
+    env: python
+    buildCommand: pip install --upgrade pip && pip install --no-cache-dir -r requirements.txt && playwright install --with-deps chromium
     startCommand: ./start.sh
     envVars:
       - key: PYTHON_VERSION
-        value: "3.11.9"
+        value: 3.11.9
       - key: NODE_VERSION
         value: "20.18.0"
       - key: DEBUG
