@@ -6,6 +6,10 @@ services:
     buildCommand: pip install --no-cache-dir -r requirements.txt && playwright install --with-deps chromium
     startCommand: ./start.sh
     envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.9"
+      - key: NODE_VERSION
+        value: "20.18.0"
       - key: DEBUG
         value: "false"
       - key: DATABASE_URL
