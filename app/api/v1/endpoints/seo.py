@@ -323,8 +323,9 @@ async def seo_audit_endpoint(
                 detail="Crawling not allowed by robots.txt"
             )
         
-        # Fetch HTML
-        html_content, error, _ = html_fetcher.fetch_html(url)
+        # Fetch HTML asynchronously with automatic browser fallback
+        use_browser = bool(options.get("use_browser", False))
+        html_content, error, _ = await html_fetcher.fetch_html_async(url, use_browser=use_browser)
         if error or not html_content:
             raise HTTPException(
                 status_code=400,
@@ -419,8 +420,9 @@ async def broken_links_endpoint(
                 detail="Crawling not allowed by robots.txt"
             )
         
-        # Fetch HTML
-        html_content, error, _ = html_fetcher.fetch_html(url)
+        # Fetch HTML asynchronously with automatic browser fallback
+        use_browser = bool(options.get("use_browser", False))
+        html_content, error, _ = await html_fetcher.fetch_html_async(url, use_browser=use_browser)
         if error or not html_content:
             raise HTTPException(
                 status_code=400,

@@ -55,17 +55,27 @@ class HTMLFetcher:
 
         return session
 
-    async def fetch_html_async(self, url: str, timeout: int = 30, use_browser: bool = False) -> Tuple[Optional[str], Optional[str], Dict[str, str]]:
+    async def fetch_html_async(self, url: str, timeout: int = 30, use_browser: bool = False, wait_for_network_idle: bool = True) -> Tuple[Optional[str], Optional[str], Dict[str, str]]:
         """
-        Asynchronous version of fetch_html that supports browser rendering.
+        Asynchronous version of fetch_html that supports browser rendering and automatic fallback.
         """
         if use_browser:
             from app.services.browser import browser_service
             async with browser_service as browser:
-                return await browser.fetch_page(url, timeout=timeout * 1000)
+                return await browser.fetch_page(url, timeout=timeout * 1000, wait_for_network_idle=wait_for_network_idle)
         
-        # Fallback to synchronous fetch in a thread for non-browser requests
-        return await asyncio.to_thread(self.fetch_html, url, timeout)
+        # Try standard fetch first
+        html, error, headers = await asyncio.to_thread(self.fetch_html, url, timeout)
+        
+        # If standard fetch fails with a 403 (Forbidden) or 401 (Unauthorized), 
+        # or other client errors, automatically retry with browser if possible.
+        if error and ("403" in error or "401" in error or "400" in error):
+            logger.info(f"Standard fetch failed for {url} ({error}). Retrying with browser...")
+            from app.services.browser import browser_service
+            async with browser_service as browser:
+                return await browser.fetch_page(url, timeout=timeout * 1000, wait_for_network_idle=wait_for_network_idle)
+                
+        return html, error, headers
 
     def fetch_html(self, url: str, timeout: int = 30) -> Tuple[Optional[str], Optional[str], Dict[str, str]]:
         """
@@ -136,12 +146,13 @@ class HTMLFetcher:
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
             'Accept-Language': 'en-US,en;q=0.9',
             'Accept-Encoding': 'gzip, deflate, br',
+            'Referer': 'https://www.google.com/',
             'DNT': '1',
             'Connection': 'keep-alive',
             'Upgrade-Insecure-Requests': '1',
             'Sec-Fetch-Dest': 'document',
             'Sec-Fetch-Mode': 'navigate',
-            'Sec-Fetch-Site': 'none',
+            'Sec-Fetch-Site': 'cross-site',
             'Sec-Fetch-User': '?1',
             'Cache-Control': 'max-age=0',
         }

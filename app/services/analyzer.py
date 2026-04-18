@@ -51,38 +51,21 @@ async def analyze_url(
         "final_status": None,
     }
 
-    if use_browser:
-        diagnostics["fetch_method"] = "browser"
-        async with browser_service as browser:
-            html_content, error, browser_metadata = await browser.fetch_page(
-                url,
-                wait_for_network_idle=bool(options.get("wait_for_network_idle", True)),
-            )
-            if error:
-                diagnostics["browser_error"] = error
-                diagnostics["final_status"] = "browser_failed"
-                raise RuntimeError(error)
-            headers = browser_metadata.get("headers", {}) if isinstance(browser_metadata, dict) else {}
-            diagnostics["final_status"] = "browser_success"
-    else:
-        diagnostics["fetch_method"] = "http"
-        html_content, error, headers = html_fetcher.fetch_html(url)
-        if error:
-            diagnostics["http_error"] = error
-            diagnostics["fallback_to_browser"] = True
-            if not playwright_available():
-                diagnostics["final_status"] = "http_failed_no_browser"
-                raise RuntimeError(error)
-            async with browser_service as browser:
-                html_content, error, browser_metadata = await browser.fetch_page(url)
-                if error:
-                    diagnostics["browser_error"] = error
-                    diagnostics["final_status"] = "browser_failed"
-                    raise RuntimeError(error)
-                headers = browser_metadata.get("headers", {}) if isinstance(browser_metadata, dict) else {}
-                diagnostics["final_status"] = "browser_success"
-        else:
-            diagnostics["final_status"] = "http_success"
+    # Fetch HTML asynchronously with automatic browser fallback
+    wait_for_network_idle = bool(options.get("wait_for_network_idle", True))
+    html_content, error, headers = await html_fetcher.fetch_html_async(
+        url, 
+        use_browser=use_browser,
+        wait_for_network_idle=wait_for_network_idle
+    )
+    
+    if error:
+        diagnostics["final_status"] = "failed"
+        diagnostics["http_error"] = error
+        raise RuntimeError(f"Failed to fetch webpage: {error}")
+
+    diagnostics["final_status"] = "success"
+    diagnostics["fetch_method"] = "browser" if use_browser or "Retrying with browser" in str(error) else "http"
 
 
     if not html_content:
