@@ -13,8 +13,8 @@ echo "Installing dependencies..."
 # We don't run pip install here to speed up startup, as it's done in buildCommand
 # pip install --no-cache-dir -r requirements.txt
 
-# Browsers are installed during buildCommand to /opt/render/project/src/.cache/ms-playwright
-echo "Checking Playwright browsers..."
+# Browsers are installed during buildCommand to ./playwright-browsers
+echo "Checking Playwright browsers in $PLAYWRIGHT_BROWSERS_PATH..."
 ls -R $PLAYWRIGHT_BROWSERS_PATH || echo "Browsers not found in $PLAYWRIGHT_BROWSERS_PATH"
 
 # Create necessary directories

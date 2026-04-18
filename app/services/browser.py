@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import platform
+import os
 from typing import Dict, Optional, Tuple
 import inspect
 
@@ -25,6 +26,19 @@ class BrowserService:
         self.playwright = None
         self.browser: Optional[Browser] = None
         self.context: Optional[BrowserContext] = None
+        
+        # Ensure PLAYWRIGHT_BROWSERS_PATH is set for Render
+        if 'PLAYWRIGHT_BROWSERS_PATH' not in os.environ:
+            # Try common Render project paths
+            possible_paths = [
+                './playwright-browsers',
+                '/opt/render/project/src/playwright-browsers',
+            ]
+            for path in possible_paths:
+                if os.path.exists(path):
+                    os.environ['PLAYWRIGHT_BROWSERS_PATH'] = os.path.abspath(path)
+                    logger.info(f"Set PLAYWRIGHT_BROWSERS_PATH to {os.environ['PLAYWRIGHT_BROWSERS_PATH']}")
+                    break
 
     async def __aenter__(self):
         await self.initialize()
@@ -41,6 +55,10 @@ class BrowserService:
                     "Playwright is not installed. Install it with `pip install playwright` "
                     "and then run `playwright install`."
                 )
+            
+            # Log current environment for debugging
+            logger.info(f"Initializing browser. PLAYWRIGHT_BROWSERS_PATH={os.environ.get('PLAYWRIGHT_BROWSERS_PATH', 'Not Set')}")
+            logger.info(f"HOME={os.environ.get('HOME', 'Not Set')}")
 
             started = async_playwright().start()
             # Tests patch `async_playwright` with a MagicMock; support both async and sync.
