@@ -39,14 +39,35 @@ For each endpoint below, click **"Add Endpoint"** in the **Endpoints** tab and f
 - **Method:** `POST`
 - **Path:** `/extract/emails`
 - **Name:** `Extract Emails`
-- **Description:** `Targeted scraper for professional email addresses found on any page.`
+- **Description:** `Professional-grade email extraction. Features AI-powered deep site crawling for massive lead generation.`
 - **Headers:** Add `Content-Type` with value `application/json`.
 - **Body:**
     - **Payload Name:** `body`
     - **Example Value:**
       ```json
       {
-        "url": "https://example.com/contact"
+        "url": "https://example.com",
+        "options": {
+          "deep_search": true,
+          "pages_limit": 100
+        }
+      }
+      ```
+      *(Note: `deep_search` is a Premium feature. PRO: 50 pgs, ULTRA: 150 pgs, MEGA: 500 pgs)*
+
+### 🔹 3. Website Analysis (Advanced)
+- **Method:** `POST`
+- **Path:** `/analyze`
+- **Name:** `Deep Analysis`
+- **Description:** `Full technical and business intelligence. Includes JS Rendering and HD Screenshots for ULTRA/MEGA users.`
+- **Body:**
+      ```json
+      {
+        "url": "https://example.com",
+        "options": {
+          "use_browser": true,
+          "screenshot": true
+        }
       }
       ```
 

@@ -20,6 +20,7 @@ from app.services.extractors import (
     extract_description,
     extract_title,
 )
+from app.services.email_crawler import email_crawler
 
 router = APIRouter()
 
@@ -45,45 +46,79 @@ async def extract_emails_endpoint(
     user: User = Depends(get_optional_user),
 ):
     """
-    Extract email addresses from a webpage.
+    Extract email addresses from a website.
     
-    This endpoint specializes in finding and validating email addresses
-    present on a webpage in contact forms, footer, or any text content.
+    This endpoint specializes in finding and validating email addresses.
+    By default, it searches the provided URL. Set 'deep_search': true 
+    in options to crawl the entire website (up to 10 pages by default).
     
-    Returns validated, unique email addresses.
+    Options:
+    - deep_search: bool (default: false)
+    - pages_limit: int (default: 10, max: 20)
     """
     start_time = time.time()
     url = str(validate_url_input(str(request.url)))
     options = validate_options_input(request.options)
     
-    try:
-        # Check robots.txt
-        if not robots_checker.can_fetch(url):
+    deep_search = bool(options.get("deep_search", False))
+    pages_limit = min(int(options.get("pages_limit", 10)), 20)  # Cap at 20 pages for performance
+    
+    # Plan check: Deep search is only for Pro, Ultra, and Mega plans
+    if deep_search:
+        user_plan = getattr(user, "plan", "free").lower()
+        # BASIC is standard, PRO/ULTRA/MEGA are premium
+        premium_plans = ["pro", "ultra", "mega"]
+        
+        if user_plan not in premium_plans:
             raise HTTPException(
                 status_code=403,
-                detail="Crawling not allowed by robots.txt"
+                detail=f"Deep Search is a Premium Feature. Upgrade to PRO, ULTRA, or MEGA to crawl entire websites. Current plan: {user_plan.upper()}"
             )
         
-        # Fetch HTML
-        html_content, error, _ = html_fetcher.fetch_html(url)
-        if error or not html_content:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Failed to fetch webpage: {error}"
-            )
+        # MASSIVE LIMITS for High Tiers (Matched to pricing table)
+        if user_plan == "mega":
+            # MEGA: 500/Month quota, but we allow deep crawl up to 500 pages per request for extreme lead gen
+            pages_limit = min(int(options.get("pages_limit", 100)), 500)
+        elif user_plan == "ultra":
+            # ULTRA: 150/Month quota, deep crawl up to 150 pages
+            pages_limit = min(int(options.get("pages_limit", 50)), 150)
+        else: # PRO
+            # PRO: 50/Month quota, deep crawl up to 50 pages
+            pages_limit = min(int(options.get("pages_limit", 20)), 50)
+
+    try:
+        if deep_search:
+            # Deep search across multiple pages
+            emails = await email_crawler.crawl_website(url, max_pages=pages_limit)
+        else:
+            # Standard single-page extraction
+            # Check robots.txt
+            if not robots_checker.can_fetch(url):
+                raise HTTPException(
+                    status_code=403,
+                    detail="Crawling not allowed by robots.txt"
+                )
+            
+            # Fetch HTML
+            html_content, error, _ = html_fetcher.fetch_html(url)
+            if error or not html_content:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Failed to fetch webpage: {error}"
+                )
+            
+            # Parse HTML
+            soup = html_fetcher.parse_html(html_content)
+            if not soup:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Failed to parse HTML content"
+                )
+            
+            # Extract emails
+            emails = extract_emails_service(soup)
         
-        # Parse HTML
-        soup = html_fetcher.parse_html(html_content)
-        if not soup:
-            raise HTTPException(
-                status_code=400,
-                detail="Failed to parse HTML content"
-            )
-        
-        # Extract emails
-        emails = extract_emails_service(soup)
-        
-        # Remove duplicates and sort
+        # Remove duplicates and sort (already handled by crawler but good for single-page)
         emails = sorted(list(set(emails)))
         
         processing_time_ms = int((time.time() - start_time) * 1000)

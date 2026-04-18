@@ -30,6 +30,13 @@ async def analyze_url(
         raise PermissionError("Crawling not allowed by robots.txt")
 
     use_browser = bool(options.get("use_browser", False))
+    
+    # Plan check for JS Rendering (Playwright)
+    # BASIC gets NO browser. PRO gets limited. ULTRA/MEGA get FULL access.
+    user_plan = options.get("user_plan", "free").lower()
+    if use_browser and user_plan in ["free", "basic"]:
+        raise PermissionError(f"JavaScript Rendering is a PRO/ULTRA/MEGA feature. Your current plan is: {user_plan.upper()}")
+
     if use_browser and not playwright_available():
         raise RuntimeError("Browser analysis requested but Playwright is not installed")
 

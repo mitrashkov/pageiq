@@ -78,6 +78,9 @@ async def analyze_website(
         if options.get("screenshot"):
             options["screenshot_filename"] = f"{request_id}.png"
 
+        # Inject user plan into options for service-level gating
+        options["user_plan"] = getattr(user, "plan", "free").lower()
+
         try:
             data, processing_time = await analyze_url_core(request.url, options)
         except PermissionError as e:

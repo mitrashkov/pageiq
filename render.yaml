@@ -2,7 +2,7 @@ services:
   - type: web
     name: pageiq-api
     env: python
-    buildCommand: chmod +x build.sh && ./build.sh
+    buildCommand: chmod +x build.sh start.sh && ./build.sh
     startCommand: ./start.sh
     envVars:
       - key: PLAYWRIGHT_BROWSERS_PATH
