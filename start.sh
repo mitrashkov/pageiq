@@ -12,6 +12,10 @@ echo "=========================================="
 echo "Installing dependencies..."
 pip install --no-cache-dir -r requirements.txt
 
+# Install Playwright browsers and system dependencies if not already present
+echo "Ensuring Playwright browsers are installed..."
+playwright install chromium --with-deps || python -m playwright install chromium --with-deps
+
 # Create necessary directories
 echo "Creating directories..."
 mkdir -p data/screenshots
