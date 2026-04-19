@@ -1,24 +1,56 @@
-# PageIQ API Documentation
+# PageIQ API Documentation (Comprehensive Reference)
 
-Comprehensive, current documentation for all active routes in this codebase.
+This document is the full, implementation-aligned guide for the current PageIQ codebase. It covers API surface area, request and response contracts, plan-gating behavior, operational notes, route aliases, and practical integration guidance.
 
-## Base URLs
-- Production app root: `https://pageiq.pompora.dev`
+If you are integrating PageIQ in production, read this file alongside:
+- `app/api/v1/api.py` (router map)
+- `app/api/v1/endpoints/*.py` (endpoint logic)
+- `app/core/responses.py` (envelope contracts)
+
+## 1. Platform Summary
+
+PageIQ turns a URL into structured business intelligence. Core capabilities include:
+- Full website analysis (`/api/v1/analyze`)
+- Technology and language detection (`/api/v1/analyze/tech`)
+- Contact extraction (`/api/v1/extract/emails`)
+- Metadata and structured-data extraction (`/api/v1/extract/schema`, `/api/v1/extract/metadata`)
+- SEO diagnostics (`/api/v1/seo/seo-audit`)
+- Link quality checks (`/api/v1/seo/broken-links`)
+- Usage analytics (`/api/v1/analytics/*`)
+- Subscription and billing management (`/api/v1/account/*`)
+
+In addition to API routes, PageIQ serves a retro-style marketing and SEO website with intent-focused landing pages.
+
+## 2. Base URLs
+
+- Production root: `https://pageiq.pompora.dev`
 - API v1 base: `https://pageiq.pompora.dev/api/v1`
+- Root docs page: `https://pageiq.pompora.dev/docs`
 
-## Authentication
-- Protected endpoints accept API key auth (handled by middleware/dependencies).
-- Common header format:
+## 3. Authentication and Access
+
+Authentication is managed through middleware and endpoint dependencies.
+
+Common header format:
 
 ```http
 X-API-Key: YOUR_API_KEY
 ```
 
-- Some account/billing endpoints require authenticated user context via `get_current_user`.
+Notes:
+- `get_optional_user` is used on many analysis and extraction routes.
+- `get_current_user` is used on account and billing routes, which require authenticated user context.
+- Some plan-specific features are enforced in endpoint logic (details below).
 
-## Response Formats
+## 4. Response Contracts
 
-### Standard Success Envelope (`APIResponse.success`)
+PageIQ uses two response styles:
+
+## 4.1 Envelope Responses (`APIResponse.success` / `APIResponse.error`)
+
+Defined in `app/core/responses.py`.
+
+Success envelope:
 
 ```json
 {
@@ -31,7 +63,7 @@ X-API-Key: YOUR_API_KEY
 }
 ```
 
-### Standard Error Envelope (`APIResponse.error`)
+Error envelope:
 
 ```json
 {
@@ -45,98 +77,79 @@ X-API-Key: YOUR_API_KEY
 }
 ```
 
-### Direct Model Responses
-- Some endpoints (notably `extract/*`, `seo/*`, and `health/*`) return model-shaped JSON directly instead of the success envelope.
+Headers often added:
+- `X-API-Version`
+- `X-Request-ID` (when present)
+- `X-Processing-Time-MS` (when provided)
 
-## Public Website Pages (SEO + Docs)
+## 4.2 Direct Model Responses
 
-### `GET /`
-- Landing page.
-- Hero:
-  - `Turn Any Website Into Actionable Business Data`
-  - Subtext: `Extract SEO score, tech stack, metadata, verified emails, socials, and hidden business intelligence from any URL.`
-  - CTA: `Try on RapidAPI`
-- Includes internal use-case links for SEO pages.
+Several endpoints return direct model-serialized JSON (not wrapped in `success/data`). This pattern is used by:
+- `extract/*`
+- `seo/*`
+- `health/*`
+- `analyze/tech`
 
-### `GET /docs`
-- HTML documentation page.
+When implementing clients, always branch parsing by endpoint family.
 
-### Intent Landing Pages
-- `GET /seo-audit-api`
-- `GET /website-scraper-api`
-- `GET /email-extractor-api`
-- `GET /tech-stack-detector-api`
-- `GET /website-metadata-api`
-- `GET /competitor-website-analysis-api`
+## 5. Routing Map (Current)
 
-These pages are multiple search-intent entry points for SEO growth.
+Top-level router mounts:
+- `/api/v1/health`
+- `/api/v1/analyze`
+- `/api/v1/analytics`
+- `/api/v1/extract`
+- `/api/v1/seo`
+- `/api/v1/account`
+- `/api/v1/docs`
+- `/api/v1/ping` (compat alias)
 
-## App-Level Operational Endpoints
+Root app also serves:
+- `/` (marketing home)
+- `/docs` (HTML docs)
+- retro SEO landing pages (`/seo-audit-api`, `/website-scraper-api`, etc.)
+- operational routes (`/health`, `/health/detailed`, `/metrics`, `/status`)
 
-### `GET /health`
-- Basic service health.
+## 6. Endpoint Documentation
 
-### `GET /health/detailed`
-- Dependency checks (`database`, `redis`, `application`).
-
-### `GET /metrics`
-- Prometheus-style metrics output.
-
-### `GET /status`
-- Operational status + metrics summary.
-
-## API v1 Endpoints
-
-## Health
-
-### `GET /api/v1/health/`
-- Comprehensive health check.
-- Returns dependency states for database and redis.
-
-### `GET /api/v1/health/ping`
-- Returns:
-
-```json
-{"status":"ok","message":"pong"}
-```
-
-### `GET|HEAD /api/v1/ping`
-- Compatibility ping alias.
-
-## Analyze
+## 6.1 Analyze Endpoints
 
 ### `POST /api/v1/analyze`
-Analyze a URL and return structured website intelligence.
 
-Request:
+Purpose:
+- Run broad website analysis using the core analyzer pipeline.
+
+Request body:
 
 ```json
 {
   "url": "https://example.com",
   "options": {
     "screenshot": true,
-    "use_browser": false
+    "use_browser": false,
+    "refresh_cache": false
   }
 }
 ```
 
-Response:
-- Standard success envelope (`APIResponse.success`)
-- `data` is produced by the core analyzer pipeline and includes fields such as:
-  - `url`, `title`, `description`, `logo`, `favicon`
-  - `emails`, `phones`, `socials`
-  - `tech_stack`, `industry_guess`, `language`, `country_guess`
-  - `keywords`, `schema_org`, `og_tags`
-  - optional screenshot and diagnostics fields
+Behavior:
+- Validates `url` and `options`.
+- Checks cache unless `refresh_cache=true`.
+- Checks and consumes quota when user context exists.
+- Adds user plan into options for downstream gating.
+- Tracks domain analytics.
 
-Notes:
-- Uses cache when `options.refresh_cache` is not set.
-- Performs quota checks and consumption when user context is present.
+Response:
+- Envelope response via `APIResponse.success`.
+- `data` payload includes extraction and analysis signals from `app/services/analyzer.py`.
+- Typical keys: `url`, `title`, `description`, `logo`, `favicon`, `emails`, `phones`, `socials`, `tech_stack`, `language`, `country_guess`, `schema_org`, `og_tags`, keywords, optional screenshot fields, and diagnostics.
 
 ### `POST /api/v1/analyze/tech`
-Detect technologies and website languages.
 
-Request:
+Purpose:
+- Detect stack technologies and foundational web languages.
+
+Request body:
 
 ```json
 {
@@ -147,47 +160,38 @@ Request:
 }
 ```
 
-Response:
+Response (direct model):
 
 ```json
 {
   "url": "https://example.com",
   "languages": ["HTML", "CSS", "JavaScript"],
-  "technologies": ["CSS", "HTML", "JavaScript", "React"],
+  "technologies": ["CSS", "HTML", "JavaScript", "React", "Google Analytics"],
   "timestamp": 1776540000.0,
   "processing_time_ms": 321
 }
 ```
 
+Notes:
+- `technologies` is a combined set that includes detected language labels.
+- Language detection currently uses presence heuristics for HTML/CSS/JS signals.
+
 ### `OPTIONS /api/v1/analyze`
-- Lightweight preflight response.
 
-## Analytics
+Purpose:
+- Preflight compatibility endpoint.
 
-### `GET /api/v1/analytics/`
-Query params:
-- `days` (int, optional, `1..90`, default `7`)
+Response:
+- Empty object `{}`.
 
-Returns usage stats, popular domains, performance metrics via success envelope.
-
-### `GET /api/v1/analytics/performance`
-Query params:
-- `days` (int, optional, `1..90`, default `7`)
-
-Returns detailed performance metrics via success envelope.
-
-### `GET /api/v1/analytics/endpoints`
-Query params:
-- `days` (int, optional, `1..90`, default `7`)
-
-Returns endpoint usage breakdown via success envelope.
-
-## Extract
+## 6.2 Extraction Endpoints
 
 ### `POST /api/v1/extract/emails`
-Extract deduplicated email addresses from a page or deep crawl.
 
-Request:
+Purpose:
+- Extract deduplicated emails from a single page or deep crawl.
+
+Request body:
 
 ```json
 {
@@ -200,17 +204,87 @@ Request:
 }
 ```
 
-Key options and plan gating:
-- `deep_search`: Premium feature (`pro`, `ultra`, `mega`)
-- `pages_limit`: plan-based cap when deep search is enabled
-- `use_browser`: Premium feature (`pro`, `ultra`, `mega`)
+Plan gating:
+- `deep_search` allowed only for plans: `pro`, `ultra`, `mega`.
+- `use_browser` allowed only for plans: `pro`, `ultra`, `mega`.
+- `pages_limit` upper bounds vary by plan when deep search is enabled.
 
-Response:
-- Direct model response with:
-  - `url`, `emails`, `count`, `timestamp`, `processing_time_ms`
+Response (direct model):
+
+```json
+{
+  "url": "https://example.com",
+  "emails": ["info@example.com", "support@example.com"],
+  "count": 2,
+  "timestamp": 1776540000.0,
+  "processing_time_ms": 850
+}
+```
 
 ### `POST /api/v1/extract/schema`
-Extract Schema.org and Open Graph.
+
+Purpose:
+- Extract Schema.org plus Open Graph tags.
+
+Request body:
+
+```json
+{
+  "url": "https://example.com",
+  "options": {
+    "use_browser": false
+  }
+}
+```
+
+Response:
+
+```json
+{
+  "url": "https://example.com",
+  "schema_org": {"@type": "Organization"},
+  "og_tags": {"title": "Example"},
+  "timestamp": 1776540000.0,
+  "processing_time_ms": 230
+}
+```
+
+Notes:
+- `schema_org` may be `null`.
+- `og_tags` may be `null`.
+- Route is now single-defined; duplicate-definition regression was removed.
+
+### `POST /api/v1/extract/metadata`
+
+Purpose:
+- Extract consolidated metadata fields in one call.
+
+Response:
+- Direct model with:
+  - `url`
+  - `title` (nullable)
+  - `description` (nullable)
+  - `schema_org` (nullable)
+  - `og_tags` (nullable)
+  - `timestamp`
+  - `processing_time_ms`
+
+## 6.3 SEO Endpoints
+
+### `POST /api/v1/seo/seo-audit`
+
+Purpose:
+- Perform weighted SEO scoring (`0..100`) with structured audit items.
+
+Checks include:
+- Title quality
+- Meta description quality
+- Heading hierarchy
+- Image alt coverage
+- Structured data presence
+- Open Graph completeness
+- Mobile viewport configuration
+- Technical checks (HTTPS, canonical, indexing, URL format)
 
 Request:
 
@@ -228,49 +302,25 @@ Response:
 ```json
 {
   "url": "https://example.com",
-  "schema_org": {"@type":"Organization"},
-  "og_tags": {"title":"Example"},
+  "score": 78,
+  "audit_items": [
+    {
+      "check": "Title",
+      "passed": true,
+      "score": 85,
+      "message": "Good title length",
+      "severity": "info"
+    }
+  ],
   "timestamp": 1776540000.0,
-  "processing_time_ms": 210
+  "processing_time_ms": 1200
 }
 ```
 
-Notes:
-- `schema_org` and `og_tags` may be `null` when not found.
-
-### `POST /api/v1/extract/metadata`
-Extract combined metadata in one call.
-
-Response fields:
-- `url`
-- `title`
-- `description`
-- `schema_org`
-- `og_tags`
-- `timestamp`
-- `processing_time_ms`
-
-## SEO
-
-### `POST /api/v1/seo/seo-audit`
-Runs weighted SEO checks and returns score `0..100`.
-
-Includes checks like:
-- title
-- meta description
-- heading hierarchy
-- image alt coverage
-- structured data
-- Open Graph
-- mobile viewport
-- technical checks (HTTPS, canonical, indexing, URL structure)
-
-Response:
-- Direct model response with:
-  - `url`, `score`, `audit_items[]`, `timestamp`, `processing_time_ms`
-
 ### `POST /api/v1/seo/broken-links`
-Extracts links and reports counts and broken links.
+
+Purpose:
+- Parse links and return broken-link summary model.
 
 Request:
 
@@ -288,19 +338,82 @@ Response:
 - `broken_links_count`
 - `internal_links`
 - `external_links`
-- `broken_links`
+- `broken_links` (array)
 - `timestamp`
 - `processing_time_ms`
 
-## Billing and Account
+Operational note:
+- Current implementation emphasizes internal extraction/counting and structural reporting.
 
-All routes below are under `/api/v1/account` and require authenticated user context.
+## 6.4 Health and Ops Endpoints
+
+### `GET /api/v1/health/`
+
+Returns:
+- `status` (`healthy` or `degraded`)
+- service metadata
+- dependency status:
+  - database
+  - redis
+
+### `GET /api/v1/health/ping`
+
+Returns:
+
+```json
+{"status":"ok","message":"pong"}
+```
+
+### `GET|HEAD /api/v1/ping`
+
+Compatibility alias:
+
+```json
+{"status":"ok","message":"pong"}
+```
+
+## 6.5 Analytics Endpoints
+
+All analytics endpoints return envelope responses.
+
+### `GET /api/v1/analytics/`
+
+Query:
+- `days` (int, `1..90`, default `7`)
+
+Data includes:
+- `usage_stats`
+- `popular_domains`
+- `performance_metrics`
+- `generated_at`
+
+### `GET /api/v1/analytics/performance`
+
+Query:
+- `days` (int, `1..90`, default `7`)
+
+Data:
+- Performance metric object from analytics service.
+
+### `GET /api/v1/analytics/endpoints`
+
+Query:
+- `days` (int, `1..90`, default `7`)
+
+Data:
+- endpoint usage map and top endpoint list.
+
+## 6.6 Account and Billing Endpoints
+
+All routes below require authenticated user context (`get_current_user`).
+
+Base prefix:
+- `/api/v1/account`
 
 ### `GET /api/v1/account/subscription`
-- Get current subscription details.
+- Get active subscription details or free-tier fallback.
 
 ### `POST /api/v1/account/subscription/upgrade`
-- Upgrade plan.
 
 Request:
 
@@ -311,8 +424,15 @@ Request:
 }
 ```
 
+Valid plans:
+- `free`
+- `starter`
+- `pro`
+- `business`
+- `enterprise`
+
 ### `POST /api/v1/account/subscription/cancel`
-- Cancel active subscription and downgrade.
+- Cancel active subscription and downgrade to free.
 
 ### `GET /api/v1/account/billing/invoices`
 - List invoices.
@@ -321,7 +441,6 @@ Request:
 - List payment methods.
 
 ### `POST /api/v1/account/billing/payment-methods`
-- Add payment method.
 
 Request:
 
@@ -332,32 +451,113 @@ Request:
 ```
 
 ### `POST /api/v1/account/webhooks/stripe`
-- Stripe webhook receiver.
+- Stripe event receiver and verification path.
 
 ### `GET /api/v1/account/account/billing-summary`
-- Current implemented route path for billing summary.
+- Returns plan + quota + billing snapshot.
+- This path currently includes duplicate `account` segment by implementation and is documented as-is.
 
-Note:
-- The duplicated `account` segment is present in the current route definition and is documented here exactly as implemented.
+## 6.7 Versioned Docs Route Aliases
 
-## Versioned Documentation Aliases
+Because docs router is mounted both at root and under `/api/v1/docs`, the following HTML routes also exist:
+- `/api/v1/docs/`
+- `/api/v1/docs/docs`
+- `/api/v1/docs/seo-audit-api`
+- `/api/v1/docs/website-scraper-api`
+- `/api/v1/docs/email-extractor-api`
+- `/api/v1/docs/tech-stack-detector-api`
+- `/api/v1/docs/website-metadata-api`
+- `/api/v1/docs/competitor-website-analysis-api`
+- `/api/v1/docs/about-pageiq`
+- `/api/v1/docs/pricing-plans`
+- `/api/v1/docs/faq-page`
+- `/api/v1/docs/guestbook`
+- `/api/v1/docs/blog-archive`
 
-Because docs router is mounted both at app root and under `/api/v1/docs`, these are also available:
+## 7. Root Website Pages (Retro Marketing + SEO)
 
-- `GET /api/v1/docs/`
-- `GET /api/v1/docs/docs`
-- `GET /api/v1/docs/seo-audit-api`
-- `GET /api/v1/docs/website-scraper-api`
-- `GET /api/v1/docs/email-extractor-api`
-- `GET /api/v1/docs/tech-stack-detector-api`
-- `GET /api/v1/docs/website-metadata-api`
-- `GET /api/v1/docs/competitor-website-analysis-api`
+Current root pages:
+- `/`
+- `/docs`
+- `/seo-audit-api`
+- `/website-scraper-api`
+- `/email-extractor-api`
+- `/tech-stack-detector-api`
+- `/website-metadata-api`
+- `/competitor-website-analysis-api`
+- `/about-pageiq`
+- `/pricing-plans`
+- `/faq-page`
+- `/guestbook`
+- `/blog-archive`
 
-## Common HTTP Status Codes
-- `200` success
-- `400` bad request / fetch/parse failures / invalid payloads
-- `401` unauthorized
-- `403` forbidden (plan restrictions, robots blocks, invalid signatures)
-- `404` not found
-- `429` rate limit exceeded
-- `500` internal server error
+These pages are intentionally content-heavy and long-tail intent-oriented to support SEO growth through multiple entry points.
+
+## 8. Common Error Cases
+
+Typical failure classes you should handle:
+- URL validation failures (`400` / `422` depending on validation layer)
+- Fetch/parsing failures (`400`)
+- Robots restrictions (`403`)
+- Plan/feature gate restrictions (`403`)
+- Quota/rate limiting (`429`)
+- Internal processing errors (`500`)
+
+For Pydantic field errors, parse response details for `type`, `loc`, and message context.
+
+## 9. Integration Recommendations
+
+- Normalize endpoint response style in your client library (envelope vs direct model).
+- Store `request_id` when available for support/debugging.
+- Apply retries with exponential backoff on transient `5xx`.
+- Treat `403` as either authorization or feature-gate scenario and branch messaging accordingly.
+- For batch-like workflows, keep extraction and analysis routes separated by purpose:
+  - use `/analyze` for broad intelligence
+  - use `/extract/*` when you need targeted payloads
+  - use `/seo/*` for scoring and QA workflows
+
+## 10. Quick cURL Examples
+
+Analyze:
+
+```bash
+curl -X POST "https://pageiq.pompora.dev/api/v1/analyze" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: YOUR_API_KEY" \
+  -d '{"url":"https://example.com","options":{"screenshot":true}}'
+```
+
+Tech detection:
+
+```bash
+curl -X POST "https://pageiq.pompora.dev/api/v1/analyze/tech" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: YOUR_API_KEY" \
+  -d '{"url":"https://example.com","options":{}}'
+```
+
+Email extraction:
+
+```bash
+curl -X POST "https://pageiq.pompora.dev/api/v1/extract/emails" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: YOUR_API_KEY" \
+  -d '{"url":"https://example.com","options":{"deep_search":false}}'
+```
+
+SEO audit:
+
+```bash
+curl -X POST "https://pageiq.pompora.dev/api/v1/seo/seo-audit" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: YOUR_API_KEY" \
+  -d '{"url":"https://example.com","options":{}}'
+```
+
+## 11. Change Tracking Notes
+
+Recent implementation-level highlights reflected in this document:
+- `/extract/schema` duplicate route definition removed, preventing `og_tags` missing-field server errors.
+- `/analyze/tech` now includes explicit `languages` and merges languages into `technologies`.
+- Root site and intent pages now include full retro content architecture for SEO strategy and multi-entry growth.
+
